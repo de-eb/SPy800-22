@@ -148,7 +148,6 @@ class STS:
         print("      {:<34}: {}".format(self.NAMES[11]['title'], self.block_size_apen))
         print()
         print("**************************************************************************\n")
-    
 
     def read_bits(self):
         """
@@ -203,6 +202,70 @@ class STS:
                         self.sequences[row, col] = (bits >> (7 - i)) & 1
                     n += 1
         raise BitShortageError(n+1, self.sequences.size)
+
+    def invoke_test(self, test, seq):
+        """
+        """
+        message = " {}  for  {}\n".format(test_name, file_path)
+        test = getattr(__import__("sp800_22_" + test_name), test_name)
+
+        try:
+            success, p_val, p_val_list, msg = test(bits)
+        except ZeroDivisionError as err:
+            p_val = 0.0
+            judge = "ERROR"
+            message += "  ZeroDivisionError: {}\n".format(err)
+            message += "  Time  : {} sec\n".format(time.time()-start_time)
+            return [test_name, file_path, p_val, judge, message]
+        else:
+            message += msg
+            if success:
+                message += "  Result: Pass"
+                judge = "PASS"
+            else:
+                message += "  Result: Fail"
+                judge = "FAIL"
+            if p_val is not None:
+                message += "   P = {}\n".format(p_val)
+            if p_val_list is not None:
+                p_val = min(p_val_list)
+                message += "   P = {}\n".format(p_val)
+            message += "  Time  : {} sec\n".format(time.time()-start_time)
+            return [test_name, file_path, p_val, judge, message]
+
+
+    def wrapper_for_run(self, args):
+        """A wrapper for parallel processing.
+        """
+        return self.invoke_test(*args)
+
+
+    def run(self):
+        """Run multiple tests for multiple binary sequences in parallel.
+        """
+        tasks = []
+        for path in self.path_list:
+            for test_name in self.run_list:
+                tasks.append((path, test_name))
+
+        print("\n Test start.\n")
+        start_time = time.time()
+        results = []
+        with Pool(processes=self.process_num) as p:
+            for result in p.imap_unordered(self.wrapper_for_run, tasks):
+                results.append(result[:4])
+                if self.show_details:
+                    print(" Progress :  {} / {}".format(len(results), len(tasks)))
+                    print(result[4])
+                else:
+                    print("\r |{:<50}|  {} / {}".format("█"*int(50*len(results)/len(tasks)),
+                                                    len(results),
+                                                    len(tasks)),
+                                                    end="")
+        print("\n\n Test completed.")
+        print(" Time: {} sec".format(time.time()-start_time))
+        results = self.__summarize(results)
+        self.__save_result(results)
 
 
 if __name__ == "__main__":
