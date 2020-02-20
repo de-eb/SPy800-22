@@ -10,7 +10,7 @@ def monobit(bits):
 
     Parameters
     ----------
-    bits (ndarray uint8) :
+    bits (ndarray, uint8, 1d) :
         Binary sequence to be tested.
     
     Returns
@@ -21,7 +21,6 @@ def monobit(bits):
 
     zeros (int) : Number of 0s in the sequence.
     """
-
     ones = np.count_nonzero(bits)
     zeros = bits.size - ones
 
@@ -30,4 +29,4 @@ def monobit(bits):
 
     p_value = math.erfc(f)
 
-    return p_value, ones, zeros
+    return (p_value, ones, zeros)
