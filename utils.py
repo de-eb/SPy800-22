@@ -2,6 +2,7 @@ import os
 import sys
 import csv
 import time
+import psutil
 import numpy as np
 from multiprocessing import Pool
 
@@ -79,7 +80,7 @@ class STS:
     FORMATS = ['ASCII', 'Byte', 'Little-endian', 'Big-endian']  # input modes
 
     
-    def __init__(self, path, fmt, seq_num, seq_size, proc_num=1, choice=0,
+    def __init__(self, path, fmt, seq_num, seq_size, proc_num=1, choice=[0],
                     bs_freq=128, bs_notm=9, bs_otm=9, bs_comp=500, bs_ser=16, bs_apen=10):
         """Constructor
         """
@@ -99,7 +100,7 @@ class STS:
             msg = "Number of processes must be between 1 and {}".format(os.cpu_count())
             raise InvalidSettingError(msg)
         if not set(choice) <= set([i for i in range(16)]):
-            msg = "Test choices must be between 0 and 15."
+            msg = "Test choice must be specified as a list from 0 to 15."
             raise InvalidSettingError(msg)
         if min([bs_freq, bs_notm, bs_otm, bs_comp, bs_ser, bs_apen]) < 1:
             msg = "Block sizes must be 1 or more."
@@ -199,3 +200,13 @@ class STS:
                         self.sequences[row, col] = (bits >> (7 - i)) & 1
                     n += 1
         raise BitShortageError(n+1, self.sequences.size)
+
+
+if __name__ == "__main__":
+
+    sts = STS(
+        path = ".debug/bits.txt",
+        fmt = 0,
+        seq_num = 10,
+        seq_size = 1000
+    )
