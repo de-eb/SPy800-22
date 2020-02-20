@@ -2,60 +2,123 @@ import os
 import sys
 import csv
 import time
-import argparse
+import numpy as np
 from multiprocessing import Pool
 
 
-class STS212:
+class STSError(Exception):
+    """Base exception class for STS.
+    """
+    pass
+
+class InputError(STSError):
+    """Exception raised for errors in the input.
+    """
+    def __init__(self, expression, message):
+        self.expression = expression
+        self.message = message
+
+class InvalidSettingError(STSError):
+    """ Exception raised when an invalid test parameter is set.
+    """
+    def __init__(self, message):
+        self.message = message
+    
+    def __str__(self):
+        return(self.message)
+
+class IllegalBitError(STSError):
+    """ Exception raised when data different from the
+        user setting format is read from the input file.
+    """
+    def __init__(self, fmt):
+        self.format = fmt
+        self.message = (
+            "The file contains data different from the \"{}\" format."
+            .format(STS.FORMATS[fmt])
+        )
+    
+    def __str__(self):
+        return self.message
+
+class BitShortageError(STSError):
+    """ Exception raised when the number of bits 
+        in the input file is less than the user setting.
+    """
+    def __init__(self, read_bits, set_bits):
+        self.read_bits = read_bits
+        self.set_bits = set_bits
+        self.message = (
+            "The file contains only {} bits for the set value ({} bits)."
+            .format(self.read_bits, self.set_bits)
+        )
+    
+    def __str__(self):
+        return self.message
+
+class STS:
     """
     """
-    # Test Specifiers
-    TESTS = [
-        {'file' : "_monobit",         'name' : "Frequency (monobit)"},
-        {'file' : "_frequency",       'name' : "Frequency within a block"},
-        {'file' : "_runs",            'name' : "Runs"},
-        {'file' : "_longest_run",     'name' : "Longest run of ones in a block"},
-        {'file' : "_rank",            'name' : "Binary matrix rank"},
-        {'file' : "_dft",             'name' : "Discrete fourier transform (spectral)"},
-        {'file' : "_non_overlapping", 'name' : "Non-overlapping template matching"},
-        {'file' : "_overlapping",     'name' : "Overlapping template matching"},
-        {'file' : "_universal",       'name' : "Maurer\'s \"universal statistical\""},
-        {'file' : "_complexity",      'name' : "Linear complexity"},
-        {'file' : "_serial",          'name' : "Serial"},
-        {'file' : "_entropy",         'name' : "Approximate entropy"},
-        {'file' : "_cusum",           'name' : "Cumulative sums (Cusum)"},
-        {'file' : "_excursions",      'name' : "Random excursions"},
-        {'file' : "_excursions_var",  'name' : "Random excursions variant"}
+    NAMES = [  # Test Specifiers
+        {'file' : "monobit",         'title' : "Frequency (monobit)"},
+        {'file' : "frequency",       'title' : "Frequency within a block"},
+        {'file' : "runs",            'title' : "Runs"},
+        {'file' : "longest_run",     'title' : "Longest run of ones in a block"},
+        {'file' : "rank",            'title' : "Binary matrix rank"},
+        {'file' : "dft",             'title' : "Discrete fourier transform (spectral)"},
+        {'file' : "non_overlapping", 'title' : "Non-overlapping template matching"},
+        {'file' : "overlapping",     'title' : "Overlapping template matching"},
+        {'file' : "universal",       'title' : "Maurer\'s \"universal statistical\""},
+        {'file' : "complexity",      'title' : "Linear complexity"},
+        {'file' : "serial",          'title' : "Serial"},
+        {'file' : "entropy",         'title' : "Approximate entropy"},
+        {'file' : "cusum",           'title' : "Cumulative sums (Cusum)"},
+        {'file' : "excursions",      'title' : "Random excursions"},
+        {'file' : "excursions_var",  'title' : "Random excursions variant"}
     ]
+    FORMATS = ['ASCII', 'Byte', 'Little-endian', 'Big-endian']  # input modes
+
     
-    # input modes
-    MODES = {'ASCII' : 0, 'BYTE' : 1, 'BIN_LE' : 2, 'BIN_BE' : 3}
-    
-    def __init__(self, f_path, f_fmt, t_sel, seq_size, seq_num, proc_num=1,
-                    bs_freq=128, bs_notm=9, bs_otm=9, bs_lcomp=500, bs_ser=16, bs_apen=10):
+    def __init__(self, path, fmt, seq_num, seq_size, proc_num=1, choice=0,
+                    bs_freq=128, bs_notm=9, bs_otm=9, bs_comp=500, bs_ser=16, bs_apen=10):
         """Constructor
         """
-        print()
-        print("**************************************************************************")
-        print("                      NIST SP800-22 rev.1a by Python3\n")
-        print("  A Statistical Test Suite for Random and Pseudorandom Number Generators")
-        print("                      for Cryptographic Applications.\n")
-        print("   This is an unofficial implementation by volunteers unrelated to NIST.")
-        print("**************************************************************************\n")
-
-        self.settings = {   'File path'     : f_path,
-                            'File format'   : f_fmt,
-                            'Test select'   : t_sel,
-                            'Sequence size' : seq_size,
-                            'Sequence num'  : seq_num,
-                            'Process num'   : proc_num  }
-
-        self.block_sizes = {    'Frequency within a block'          : bs_freq,
-                                'Non-overlapping template matching' : bs_notm,
-                                'Overlapping template matching'     : bs_otm,
-                                'Linear complexity'                 : bs_lcomp,
-                                'Serial'                            : bs_ser,
-                                'Approximate entropy'               : bs_apen   }
+        if not os.path.isfile(path):
+            msg = "File \"{}\" is not found.".format(path)
+            raise InvalidSettingError(msg)
+        if fmt not in [0, 1, 2, 3]:
+            msg = "File format must be specified as either 0, 1, 2, or 3."
+            raise InvalidSettingError(msg)
+        if seq_num < 1:
+            msg = "Number of sequences must be 1 or more."
+            raise InvalidSettingError(msg)
+        if seq_size < 1000:
+            msg = "Sequence length must be 1000 bits or more."
+            raise InvalidSettingError(msg)
+        if not (0 < proc_num <= os.cpu_count()):
+            msg = "Number of processes must be between 1 and {}".format(os.cpu_count())
+            raise InvalidSettingError(msg)
+        if not set(choice) <= set([i for i in range(16)]):
+            msg = "Test choices must be between 0 and 15."
+            raise InvalidSettingError(msg)
+        if min([bs_freq, bs_notm, bs_otm, bs_comp, bs_ser, bs_apen]) < 1:
+            msg = "Block sizes must be 1 or more."
+            raise InvalidSettingError(msg)
+        self.file_path = path
+        self.file_format = fmt
+        self.sequence_num = seq_num
+        self.sequence_size = seq_size
+        self.process_num = proc_num
+        self.block_size_freq = bs_freq
+        self.block_size_notm = bs_notm
+        self.block_size_otm = bs_otm
+        self.block_size_comp = bs_comp
+        self.block_size_ser = bs_ser
+        self.block_size_apen = bs_apen
+        if 0 in set(choice):
+            self.test_choice = [i+1 for i in range(15)]
+        else:
+            self.test_choice = list(set(choice))
 
     def show_settings(self):
         """
@@ -64,28 +127,75 @@ class STS212:
         print("**************************************************************************")
         print("  Test settings\n")
         print("    General\n")
-        print("      File path            : {}".format(self.settings['File path']))
-        print("      File format          : ", end="")
-        if self.settings['File format'] == 0:
-            print("ASCII characters of \"0\" or \"1\"")
-        elif self.settings['File format'] == 1:
-            print("Byte values of 0 or 1")
-        elif self.settings['File format'] == 2:
-            print("Binary (little-endian) from 0 to 255")
-        elif self.settings['File format'] == 3:
-            print("Binary (big-endian) from 0 to 255")
-        print("      Number of sequences  : {}".format(self.settings['Sequence num']))
-        print("      Sequence size (bits) : {}".format(self.settings['Sequence size']))
-        print("      Number of proccesses : {}".format(self.settings['Process num']))
+        print("      File path            : {}".format(self.file_path))
+        print("      File format          : {}".format(STS.FORMATS[self.file_format]))
+        print("      Number of sequences  : {}".format(self.sequence_num))
+        print("      Sequence size (bits) : {}".format(self.sequence_size))
+        print("      Number of proccesses : {}".format(self.process_num))
         print("\n    List of tests to be run\n")
-        for i in self.settings['Test select']:
-            print("      {:<2}: {:<34}".format(i, self.TESTS[i-1]['name']))
-        if not set([2,7,8,10,11,12]).isdisjoint(self.settings['Test select']):
-            print("\n    Block sizes\n")
-            for i in [2,7,8,10,11,12]:
-                if i in self.settings['Test select']:
-                    print("      {:<34}: {}"
-                        .format(self.TESTS[i-1]['name'], self.block_sizes[self.TESTS[i-1]['name']]))
+        for i in self.test_choice:
+            print("      {:<2}: {}".format(i, self.NAMES[i-1]['title']))
+        print("\n    Block sizes\n")
+        print("      {:<34}: {}".format(self.NAMES[1]['title'], self.block_size_freq))
+        print("      {:<34}: {}".format(self.NAMES[6]['title'], self.block_size_notm))
+        print("      {:<34}: {}".format(self.NAMES[7]['title'], self.block_size_otm))
+        print("      {:<34}: {}".format(self.NAMES[9]['title'], self.block_size_comp))
+        print("      {:<34}: {}".format(self.NAMES[10]['title'], self.block_size_ser))
+        print("      {:<34}: {}".format(self.NAMES[11]['title'], self.block_size_apen))
         print()
         print("**************************************************************************\n")
     
+
+    def read_bits(self):
+        """
+        """
+        self.sequences = np.empty(  # Bit streams
+            shape = (self.sequence_num, self.sequence_size),
+            dtype = 'uint8'
+        )
+        if self.file_format == 0:  # ASCII
+            self.__read_bits_in_ascii_format()
+        elif self.file_format == 1:  # Byte
+            self.__read_bits_in_byte_format()
+        else:  # Binary
+            self.__read_bits_in_binary_format()
+    
+    def __read_bits_in_ascii_format(self):
+        with open(self.file_path, mode='r') as f:
+            for n, byte in enumerate(iter(lambda:f.read(1), "")):
+                if n > self.sequences.size -1:
+                    return
+                if byte == "0" or byte == "1":  # 0x30 or 0x31
+                    row, col = divmod(n, self.sequences.shape[1])
+                    self.sequences[row, col] = byte
+                else:
+                    raise IllegalBitError(self.file_format)
+        raise BitShortageError(n+1, self.sequences.size)
+
+    def __read_bits_in_byte_format(self):
+        with open(self.file_path, mode='rb') as f:
+            for n, byte in enumerate(iter(lambda:f.read(1), b'')):
+                if n > self.sequences.size -1:
+                    return
+                if byte == 0x00 or byte == 0x01:
+                    row, col = divmod(n, self.sequences.shape[1])
+                    self.sequences[row, col] = int.from_bytes(byte, 'big')
+                else:
+                    raise IllegalBitError(self.file_format)
+        raise BitShortageError(n+1, self.sequences.size)
+    
+    def __read_bits_in_binary_format(self):
+        n = 0  # Bit counter
+        with open(self.file_path, mode='rb') as f:
+            for byte in iter(lambda:f.read(1), b''):
+                bits = int.from_bytes(byte, 'big')
+                for i in range(8):
+                    if n > self.sequences.size -1:
+                        return
+                    row, col = divmod(n, self.sequences.shape[1])
+                    if self.file_format == 2:  # Little-endian
+                        self.sequences[row, col] = (bits >> i) & 1
+                    elif self.file_format == 3:  # Big-endian
+                        self.sequences[row, col] = (bits >> (7 - i)) & 1
+                    n += 1
+        raise BitShortageError(n+1, self.sequences.size)
