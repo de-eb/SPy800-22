@@ -10,15 +10,12 @@ def monobit(bits):
 
     Parameters
     ----------
-    bits (ndarray, uint8, 1d) :
-        Binary sequence to be tested.
+    bits (ndarray, uint8, 1d) : Binary sequence to be tested.
     
     Returns
     -------
     p_value (float) : Test result.
-
     ones (int) : Number of 1s in the sequence.
-
     zeros (int) : Number of 0s in the sequence.
     """
     ones = np.count_nonzero(bits)
