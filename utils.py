@@ -77,7 +77,7 @@ class STS:
         {'file' : "excursions",      'title' : "Random excursions"},
         {'file' : "excursions_var",  'title' : "Random excursions variant"}
     ]
-    FORMATS = ['ASCII', 'Byte', 'Little-endian', 'Big-endian']  # input modes
+    FORMATS = ['ASCII_01', 'Byte_01', 'Little-endian', 'Big-endian']  # input modes
 
     
     def __init__(self, path, fmt, seq_num, seq_size, proc_num=1, choice=[0],
@@ -95,6 +95,9 @@ class STS:
             raise InvalidSettingError(msg)
         if seq_size < 1000:
             msg = "Sequence length must be 1000 bits or more."
+            raise InvalidSettingError(msg)
+        if seq_num*seq_size >= psutil.virtual_memory().available*0.8:
+            msg = "Memory may be insufficient. Reduce the number or length of the sequence."
             raise InvalidSettingError(msg)
         if not (0 < proc_num <= os.cpu_count()):
             msg = "Number of processes must be between 1 and {}".format(os.cpu_count())
@@ -210,3 +213,5 @@ if __name__ == "__main__":
         seq_num = 10,
         seq_size = 1000
     )
+
+    sts.read_bits()
