@@ -19,7 +19,7 @@ def frequency(bits, block_size=128):
     -------
     p_value : float
         Test result.
-    chi_squared : float
+    chi_square : float
         Computed statistics.
     """
     block_num, mod = divmod(bits.size, block_size)  # Number of blocks
@@ -28,11 +28,11 @@ def frequency(bits, block_size=128):
     block_sums = np.sum(blocks, axis=1)
     v = block_sums / block_size - 0.5
     s = np.sum(np.power(v,2))
-    chi_squared = 4.0 * block_size * s
+    chi_square = 4.0 * block_size * s
 
-    p_value = gammaincc(block_num/2.0 , chi_squared/2.0)
+    p_value = gammaincc(block_num/2.0 , chi_square/2.0)
         
-    return p_value, chi_squared
+    return p_value, chi_square
 
 
 if __name__ == "__main__":
