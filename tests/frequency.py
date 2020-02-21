@@ -5,7 +5,8 @@ from scipy.special import gammaincc
 
 
 def frequency(bits, block_size=128):
-    """ Frequency Test within a block
+    """
+    Frequency Test within a block
 
     Parameters
     ----------
@@ -25,7 +26,7 @@ def frequency(bits, block_size=128):
     
     blocks = np.resize(bits, (block_num, block_size))
     block_sums = np.sum(blocks, axis=1)
-    v = block_sums/block_size - 0.5
+    v = block_sums / block_size - 0.5
     s = np.sum(np.power(v,2))
     chi_squared = 4.0 * block_size * s
 
