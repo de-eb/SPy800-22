@@ -6,7 +6,7 @@ from scipy.special import gammaincc
 
 def longest_run(bits):
     """
-    Runs Test
+    Test for the Longest Run of Ones in a Block
 
     Parameters
     ----------
