@@ -5,18 +5,24 @@ import numpy as np
 
 
 def runs(bits):
-    """ Runs Test
+    """
+    Runs Test
 
     Parameters
     ----------
-    bits (ndarray, uint8, 1d) : Binary sequence to be tested.
+    bits : 1d-ndarray uint8
+        Binary sequence to be tested.
     
     Returns
     -------
-    p_value (float) : Test result.
-    erfc_arg (float) : Argment of complementary error function.
-    vobs (int) : Total of Runs.
-    pi (float) : Ratio of 1 to all bits.
+    p_value : float
+        Test result.
+    erfc_arg : float
+        Argment of complementary error function.
+    vobs : int
+        Total of Runs.
+    pi : float
+        Ratio of 1 to all bits.
     """
     pi = np.count_nonzero(bits) / bits.size
 
@@ -29,4 +35,11 @@ def runs(bits):
 
     p_value = math.erfc(erfc_arg)
 
-    return (p_value, erfc_arg, vobs, pi)
+    return p_value, erfc_arg, vobs, pi
+
+
+if __name__ == "__main__":
+
+    bits = np.random.randint(0, 2, size=1000)
+    results = runs(bits)
+    print("\np-value = {}\n".format(results[0]))
