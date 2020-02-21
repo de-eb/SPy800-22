@@ -37,6 +37,6 @@ def frequency(bits, block_size=128):
 
 if __name__ == "__main__":
 
-    bits = np.random.randint(0, 2, size=1000)
+    bits = np.random.randint(0, 2, size=1024)
     results = frequency(bits)
     print("\np-value = {}\n".format(results[0]))

@@ -26,4 +26,11 @@ def monobit(bits):
 
     p_value = math.erfc(f)
 
-    return (p_value, ones, zeros)
+    return p_value, ones, zeros
+
+
+if __name__ == "__main__":
+
+    bits = np.random.randint(0, 2, size=1024)
+    results = monobit(bits)
+    print("\np-value = {}\n".format(results[0]))

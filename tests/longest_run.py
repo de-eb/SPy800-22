@@ -57,6 +57,6 @@ def longest_run(bits):
 
 if __name__ == "__main__":
 
-    bits = np.random.randint(0, 2, size=1000)
+    bits = np.random.randint(0, 2, size=1024)
     results = longest_run(bits)
     print("\np-value = {}\n".format(results[0]))
