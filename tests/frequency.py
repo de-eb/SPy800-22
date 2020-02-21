@@ -38,4 +38,4 @@ if __name__ == "__main__":
 
     bits = np.random.randint(0, 2, size=1000)
     results = frequency(bits)
-    print("\np-value = {},  chi_squared = {}\n".format(results[0], results[1]))
+    print("\np-value = {}\n".format(results[0]))
