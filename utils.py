@@ -138,8 +138,8 @@ class STS:
         if seq_num < 1:
             msg = "Number of sequences must be 1 or more."
             raise InvalidSettingError(msg)
-        if seq_size < 1000:
-            msg = "Sequence length must be 1000 bits or more."
+        if seq_size < 1024:
+            msg = "Sequence length must be 1024 bits or more."
             raise InvalidSettingError(msg)
         if seq_num*seq_size >= psutil.virtual_memory().available*0.8:
             msg = "Memory may be insufficient. Reduce the number or length of the sequence."
