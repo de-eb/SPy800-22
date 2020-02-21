@@ -253,34 +253,13 @@ class STS:
         """
         """
         test = getattr(
-            import_module("tests." + STS.NAMES[test_id-1]['func']),
-            STS.NAMES[test_id]['func'])
-        if test_id -1 == 1:
-            results = test(self.sequences[seq_id], )
-
-        try:
-            success, p_val, p_val_list, msg = test(bits)
-        except ZeroDivisionError as err:
-            p_val = 0.0
-            judge = "ERROR"
-            message += "  ZeroDivisionError: {}\n".format(err)
-            message += "  Time  : {} sec\n".format(time.time()-start_time)
-            return [test_name, file_path, p_val, judge, message]
+            import_module("tests." + STS.SRC[test_id]), STS.SRC[test_id])
+        if test_id in self.block_sizes.keys():
+            results = test(self.sequences[seq_id], self.block_sizes[test_id])
         else:
-            message += msg
-            if success:
-                message += "  Result: Pass"
-                judge = "PASS"
-            else:
-                message += "  Result: Fail"
-                judge = "FAIL"
-            if p_val is not None:
-                message += "   P = {}\n".format(p_val)
-            if p_val_list is not None:
-                p_val = min(p_val_list)
-                message += "   P = {}\n".format(p_val)
-            message += "  Time  : {} sec\n".format(time.time()-start_time)
-            return [test_name, file_path, p_val, judge, message]
+            results = test(self.sequences[seq_id])
+        
+        return results
 
 
     def wrapper_for_run(self, args):
