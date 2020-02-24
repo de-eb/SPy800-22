@@ -39,9 +39,8 @@ def non_overlapping(bits, tpl_size=9):
     p_value = np.zeros(tpl.shape[0])
 
     for i in range(tpl.shape[0]):
-        res = cv2.matchTemplate(
-            bits, tpl[i].reshape((1,-1)), cv2.TM_CCOEFF_NORMED)
-        matches[i] = np.count_nonzero(res >= 0.99, axis=1)
+        res = cv2.matchTemplate(bits, tpl[i].reshape((1,-1)), cv2.TM_SQDIFF)
+        matches[i] = np.count_nonzero(res <= 0.5, axis=1)
         chi_square[i] = np.sum(((matches[i] - mean)/var**0.5)**2)  # why?
 
         p_value[i] = gammaincc(blk_num/2.0 , chi_square[i]/2.0)
@@ -51,8 +50,8 @@ def non_overlapping(bits, tpl_size=9):
 
 if __name__ == "__main__":
 
-    bits = np.random.randint(0, 2, size=1024)
-    results = non_overlapping(bits, 3)
+    bits = np.random.randint(0, 2, size=2**20)
+    results = non_overlapping(bits)
     print()
     for i, v in enumerate(results[0]):
         print("p-value of template{} = {}".format(i,v))
