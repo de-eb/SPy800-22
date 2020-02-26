@@ -9,7 +9,6 @@ def sigma(n, z, term=False):
     a, b, c = 1, 1, -1
     if term:
         a, b, c = -3, 3, 1
-    st = int((-n/z+1)//4)
     k = np.arange(int((-n/z+a)//4), int((n/z-1)//4)+1)
     s = np.sum(norm.cdf((4*k+b)*z/math.sqrt(n))
                 - norm.cdf((4*k+c)*z/math.sqrt(n)))
