@@ -6,7 +6,8 @@ from scipy.special import gammaincc
 
 def frequency(bits, blk_size=128):
     """
-    Frequency Test within a Block.
+    Frequency Test within a Block
+    -----------------------------
     Evaluate the uniformity of 0s and 1s for each M-bit subsequence.
 
     Parameters
