@@ -1,12 +1,14 @@
 # runs.py
 
-import math
 import numpy as np
+from math import sqrt, erfc
 
 
 def runs(bits):
     """
-    Runs Test
+    Runs Test.
+    Evaluate the total number of "Run"s for the entire sequence,
+    where a "Run" is a continuation of the same bit.
 
     Parameters
     ----------
@@ -17,29 +19,22 @@ def runs(bits):
     -------
     p_value : float
         Test result.
-    erfc_arg : float
-        Argment of complementary error function.
-    vobs : int
-        Total of Runs.
-    pi : float
-        Ratio of 1 to all bits.
+    run : int
+        Total of "Run"s.
     """
     pi = np.count_nonzero(bits) / bits.size
+    if abs(pi-0.5) > 2/sqrt(bits.size):
+        return 0.0, None
+    run = np.count_nonzero(np.diff(bits))
 
-    if abs(pi - 0.5) > (2.0 / math.sqrt(bits.size)):
-        return (0.0, None, None, pi)
-    
-    vobs = np.count_nonzero(np.diff(bits))
-    erfc_arg = (abs(vobs - 2.0*bits.size*pi*(1-pi))
-                / (2.0*pi*(1-pi)*math.sqrt(2*bits.size)))
+    p_value = erfc(
+        abs(run-2*bits.size*pi*(1-pi)) / (2*pi*(1-pi)*sqrt(2*bits.size)))
 
-    p_value = math.erfc(erfc_arg)
-
-    return p_value, erfc_arg, vobs, pi
+    return p_value, run
 
 
 if __name__ == "__main__":
 
-    bits = np.random.randint(0, 2, size=1024)
+    bits = np.random.randint(0, 2, size=10**6)
     results = runs(bits)
     print("\np-value = {}\n".format(results[0]))
