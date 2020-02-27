@@ -6,7 +6,8 @@ from math import sqrt, erfc
 
 def runs(bits):
     """
-    Runs Test.
+    Runs Test
+    ---------
     Evaluate the total number of "Run"s for the entire sequence,
     where a "Run" is a continuation of the same bit.
 
