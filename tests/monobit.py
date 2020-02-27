@@ -6,7 +6,8 @@ from math import sqrt, erfc
 
 def monobit(bits):
     """
-    Frequency (Monobit) Test.
+    Frequency (Monobit) Test
+    ------------------------
     Evaluate the uniformity of 0s and 1s for the entire sequence.
 
     Parameters
