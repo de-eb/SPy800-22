@@ -1,36 +1,36 @@
 # monobit.py
 
-
-import math
 import numpy as np
+from math import sqrt, erfc
 
 
 def monobit(bits):
-    """ Frequency (monobit) Test
+    """
+    Frequency (Monobit) Test.
+    Evaluate the proportion of 0s and 1s for the entire sequence.
 
     Parameters
     ----------
-    bits (ndarray, uint8, 1d) : Binary sequence to be tested.
+    bits : 1d-ndarray uint8
+        Binary sequence to be tested.
     
     Returns
     -------
-    p_value (float) : Test result.
-    ones (int) : Number of 1s in the sequence.
-    zeros (int) : Number of 0s in the sequence.
+    p_value : float
+        Test result.
+    counts : list of int
+        Number of occurrences of 0s and 1s for the entire sequence.
     """
     ones = np.count_nonzero(bits)
     zeros = bits.size - ones
 
-    s_obs = abs(ones-zeros) / math.sqrt(bits.size)
-    f = s_obs / math.sqrt(2.0)
+    p_value = erfc((abs(ones-zeros)/sqrt(bits.size))/sqrt(2))
 
-    p_value = math.erfc(f)
-
-    return p_value, ones, zeros
+    return p_value, [zeros, ones]
 
 
 if __name__ == "__main__":
 
-    bits = np.random.randint(0, 2, size=1024)
+    bits = np.random.randint(0, 2, size=10**6)
     results = monobit(bits)
     print("\np-value = {}\n".format(results[0]))
