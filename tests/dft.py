@@ -1,13 +1,15 @@
 # dft.py
 
-import math
 import numpy as np
-from scipy import fftpack
+from scipy.fftpack import fft
+from math import sqrt, log, erfc
 
 
 def dft(bits):
     """
-    Discrete fourier transform (spectral) Test
+    Discrete Fourier Transform (Spectral) Test
+    ------------------------------------------
+    Evaluate the peak heights in DFT of the sequence.
 
     Parameters
     ----------
@@ -19,34 +21,22 @@ def dft(bits):
     p_value : float
         Test result.
     percentile : float
-        Probability that peaks after DFT are below the reference.
-    n : list of int
-        n[0] is expected theoretical number of peaks.
-        n[1] is the number of observed peaks below the reference.
-    d : float
-        Numerator of the argument of the complementary error function.
+        Percentage of DFT peaks below threshold.
     """
-    if bits.size & bits.size -1 != 0:
-        pad = 2**math.ceil(math.log2(bits.size)) - bits.size
-        bits = np.pad(bits, [math.floor(pad/2), math.ceil(pad/2)])
+    ref = 0.95*bits.size / 2
     bits = 2*bits - 1
+    magnitude = np.abs(fft(bits)[:bits.size // 2])
+    threshold = sqrt(log(1/0.05)*bits.size)
+    count = np.count_nonzero(magnitude < threshold)
+    percentile = 100*count / (bits.size/2)
 
-    s = fftpack.fft(bits)
-    m = np.abs(s[:bits.size // 2])
-    t = math.sqrt(math.log(1./0.05)*bits.size)  # upper bound
-    n = [0., 0.]
-    n[0] = 0.95*bits.size / 2.
-    n[1] = np.count_nonzero(m < t)
-    percentile = 100*n[1] / (bits.size/2)
-    d = (n[1] - n[0]) / math.sqrt(bits.size*0.95*0.05/4.)
+    p_value = erfc(abs((count-ref)/sqrt(bits.size*0.95*0.05/4)) / sqrt(2))
 
-    p_value = math.erfc(abs(d)/math.sqrt(2.))
-
-    return p_value, percentile, n, d
+    return p_value, percentile
 
 
 if __name__ == "__main__":
 
-    bits = np.random.randint(0, 2, size=1024)
+    bits = np.random.randint(0, 2, size=10**6)
     results = dft(bits)
     print("\np-value = {}\n".format(results[0]))
