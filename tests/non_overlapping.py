@@ -10,7 +10,7 @@ def non_overlapping(bits, tpl_size=9):
     Non-overlapping Template Matching Test
     --------------------------------------
     Evaluates the number of occurrences of templates 
-    (particular m-bit patterns) for each M-bit subsequence.
+    (unique m-bit patterns) for each M-bit subsequence.
 
     Parameters
     ----------
