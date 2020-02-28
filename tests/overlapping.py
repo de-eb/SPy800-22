@@ -1,14 +1,17 @@
 # overlapping.py
 
-import math
 import numpy as np
 import cv2
+from math import exp, log
 from scipy.special import gammaincc, loggamma
 
 
 def overlapping(bits, tpl_size=9):
     """
-    Overlapping template matching Test
+    Overlapping Template Matching Test
+    ----------------------------------
+    Evaluates the number of occurrences of a template 
+    (duplicate m-bit pattern) for each M-bit subsequence.
 
     Parameters
     ----------
@@ -22,8 +25,8 @@ def overlapping(bits, tpl_size=9):
     p_value : float
         Test result.
     chi_square : float
-        Computed statistics.
-    nu : 1d-ndarray
+        Computed statistic.
+    hist : 1d-ndarray
         Histogram of the number of template matches in each block.
     """
     k = 5
@@ -33,27 +36,27 @@ def overlapping(bits, tpl_size=9):
     eta = lmd/2.
 
     pi = np.zeros(k+1)
-    pi[0] = math.exp(-eta)
+    pi[0] = exp(-eta)
     for i in range(1, k):
         pi[i] = 0.
         for j in range(1, i+1):
-            pi[i] += math.exp(-eta - i*math.log(2) + j*math.log(eta)
+            pi[i] += exp(-eta - i*log(2) + j*log(eta)
                 - loggamma(j+1) + loggamma(i) - loggamma(j) - loggamma(i-j+1))
     pi[k] = 1 - np.sum(pi)
 
     tpl = np.ones((1,tpl_size), dtype='uint8')
     blk = np.resize(bits, (blk_num, blk_size)).astype('uint8')
-    nu = np.zeros(k+1)
+    hist = np.zeros(k+1)
     res = cv2.matchTemplate(blk, tpl, cv2.TM_SQDIFF)
-    matches = np.count_nonzero(res <= 0.5, axis=1)
+    match = np.count_nonzero(res <= 0.5, axis=1)
     for i in range(k):
-        nu[i] = np.count_nonzero(np.logical_and(matches > i-1, matches <= i))
-    nu[k] = np.count_nonzero(matches > i)
-    chi_square = np.sum((nu - blk_num*pi)**2 / (blk_num*pi))
+        hist[i] = np.count_nonzero(np.logical_and(match > i-1, match <= i))
+    hist[k] = np.count_nonzero(match > i)
+    chi_square = np.sum((hist - blk_num*pi)**2 / (blk_num*pi))
 
-    p_value = gammaincc(k/2.0, chi_square/2.0)
+    p_value = gammaincc(k/2, chi_square/2)
 
-    return p_value, chi_square, nu
+    return p_value, chi_square, hist
 
 
 if __name__ == "__main__":
