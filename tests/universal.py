@@ -1,10 +1,21 @@
 # universal.py
 
-import math
 import numpy as np
+from math import sqrt, erfc
 
 
 def packbits(x, reverse=True):
+    """
+    Converts a binary matrix to a decimal value.
+    Implementation to avoid using "numpy.packbits()".
+
+    Parameters
+    ----------
+    x : 1d-ndarray int
+        Binary matrix to be converted.
+    reverse : bool
+        Conversion mode. If true, little endian. Default is big endian.
+    """
     p = np.power(2, np.arange(x.shape[-1]))
     if reverse:
         p = p[::-1]
@@ -13,6 +24,9 @@ def packbits(x, reverse=True):
 def universal(bits):
     """
     Maurer's "Universal Statistical" Test
+    -------------------------------------
+    Evaluate the distance (bits) between L-bit patterns
+    repeatedly observed in the sequence.
 
     Parameters
     ----------
@@ -24,7 +38,7 @@ def universal(bits):
     p_value : float
         Test result.
     phi : float
-        Computed statistics.
+        Computed statistic.
     """
     blk_size = 5
     thresh = [387840, 904960, 2068480, 4654080, 10342400, 22753280,
@@ -42,7 +56,7 @@ def universal(bits):
     q = 10 * 2**blk_size
     k = bits.size // blk_size - q
     sigma = ((0.7 - 0.8/blk_size + (4+32/blk_size)/15 * k**(-3/blk_size))
-            * math.sqrt(var[blk_size]/k))
+            * sqrt(var[blk_size]/k))
 
     t = np.zeros(2**blk_size)
     blk = packbits(np.resize(bits, (k+q, blk_size)))
@@ -53,7 +67,7 @@ def universal(bits):
         s += np.sum(np.log2(np.diff(np.append(-t[i], np.where(blk[q:]==i)))))
     phi = s / k
     
-    p_value = math.erfc(abs(phi-expected[blk_size]) / (math.sqrt(2)*sigma))
+    p_value = erfc(abs(phi-expected[blk_size]) / (sqrt(2)*sigma))
 
     return p_value, phi
 
