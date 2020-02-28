@@ -6,7 +6,17 @@ from scipy.special import gammaincc
 
 def bma(bits):
     """
-    Berlekamp Massey Algorithm using NumPy
+    Berlekamp Massey Algorithm using NumPy.
+
+    Parameters
+    ----------
+    bits : 1d-ndarray uint8
+        Binary sequence.
+
+    Returns
+    -------
+    l : int
+        Linear complexity.
     """
     c, b = np.zeros(bits.size, dtype=int), np.zeros(bits.size, dtype=int)
     c[0], b[0] = 1, 1
@@ -25,20 +35,22 @@ def bma(bits):
 def complexity(bits, blk_size=500):
     """
     Linear complexity Test
+    ----------------------
+    Evaluates the length of the linear feedback shift register (LFSR).
 
     Parameters
     ----------
     bits : 1d-ndarray uint8
         Binary sequence to be tested.
     blk_size : int
-        Sequence length (bits) after being divided into blocks.
+        Bit length of each block.
     
     Returns
     -------
     p_value : float
         Test result.
     chi_square : float
-        Computed statistics.
+        Computed statistic.
     """
     blk_num = bits.size // blk_size
     blk = np.resize(bits, (blk_num, blk_size))
