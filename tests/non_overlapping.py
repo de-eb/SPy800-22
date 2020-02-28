@@ -25,7 +25,7 @@ def non_overlapping(bits, tpl_size=9):
         Test results for each template.
     chi_square : 1d-ndarray
         Computed statistics for each template.
-    matches : 2d-ndarray
+    match : 2d-ndarray
         Number of matches in each block for each template.
     """
     blk_num = 8
@@ -37,14 +37,14 @@ def non_overlapping(bits, tpl_size=9):
 
     tpl = np.load("tests/templates/tpl{}.npy".format(tpl_size))
     bits = np.resize(bits, (blk_num, blk_size)).astype('uint8')
-    matche = np.zeros((tpl.shape[0], blk_num))
+    match = np.zeros((tpl.shape[0], blk_num))
     for i in range(tpl.shape[0]):
         res = cv2.matchTemplate(bits, tpl[i].reshape((1,-1)), cv2.TM_SQDIFF)
-        matche[i] = np.count_nonzero(res <= 0.5, axis=1)
-    chi_square = np.sum(((matche - mean)/var**0.5)**2, axis=1)  # why?
+        match[i] = np.count_nonzero(res <= 0.5, axis=1)
+    chi_square = np.sum(((match - mean)/var**0.5)**2, axis=1)  # why?
     p_value = gammaincc(blk_num/2 , chi_square/2)
 
-    return p_value, chi_square, matche
+    return p_value, chi_square, match
 
 
 if __name__ == "__main__":
