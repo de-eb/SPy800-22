@@ -7,7 +7,10 @@ from scipy.special import gammaincc
 
 def non_overlapping(bits, tpl_size=9):
     """
-    Non-overlapping template matching Test
+    Non-overlapping Template Matching Test
+    --------------------------------------
+    Evaluates the number of occurrences of templates 
+    (particular m-bit patterns) for each M-bit subsequence.
 
     Parameters
     ----------
@@ -29,23 +32,19 @@ def non_overlapping(bits, tpl_size=9):
     blk_size = bits.size // blk_num
     mean = (blk_size - tpl_size + 1) / 2**tpl_size
     var = blk_size*(1/2**tpl_size - (2*tpl_size-1)/2**(2*tpl_size))
-    if var <= 0:
-        return None, None, None
+    if mean <= 0:
+        return 0.0, None, None
 
     tpl = np.load("tests/templates/tpl{}.npy".format(tpl_size))
     bits = np.resize(bits, (blk_num, blk_size)).astype('uint8')
-    matches = np.zeros((tpl.shape[0], blk_num))
-    chi_square = np.zeros(tpl.shape[0])
-    p_value = np.zeros(tpl.shape[0])
-
+    matche = np.zeros((tpl.shape[0], blk_num))
     for i in range(tpl.shape[0]):
         res = cv2.matchTemplate(bits, tpl[i].reshape((1,-1)), cv2.TM_SQDIFF)
-        matches[i] = np.count_nonzero(res <= 0.5, axis=1)
-        chi_square[i] = np.sum(((matches[i] - mean)/var**0.5)**2)  # why?
+        matche[i] = np.count_nonzero(res <= 0.5, axis=1)
+    chi_square = np.sum(((matche - mean)/var**0.5)**2, axis=1)  # why?
+    p_value = gammaincc(blk_num/2 , chi_square/2)
 
-        p_value[i] = gammaincc(blk_num/2.0 , chi_square[i]/2.0)
-
-    return p_value, chi_square, matches
+    return p_value, chi_square, matche
 
 
 if __name__ == "__main__":
@@ -54,5 +53,5 @@ if __name__ == "__main__":
     results = non_overlapping(bits)
     print()
     for i, v in enumerate(results[0]):
-        print("p-value of template{} = {}".format(i,v))
+        print("p-value of template{:3} = {}".format(i,v))
     print()
