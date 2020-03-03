@@ -1,6 +1,8 @@
 from spy800_22.sts import STS, InvalidSettingError
-from spy800_22.monobit import FrequencyTest
-from spy800_22.frequency import BlockFrequencyTest
+# from spy800_22.monobit import FrequencyTest
+# from spy800_22.frequency import BlockFrequencyTest
+from spy800_22.tests import FrequencyTest
+from spy800_22.tests import BlockFrequencyTest
 
 class Multiple(STS):
     """
