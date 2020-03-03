@@ -37,7 +37,8 @@ class FrequencyTest(STS):
     ID = STS.TestID.FREQUENCY
     NAME = "Frequency (Monobit) Test"
 
-    def __init__(self, seq_len, seq_num, proc_num=1, init=True) -> None:
+    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
+            init: bool =True) -> None:
         """
         Parameters
         ----------
