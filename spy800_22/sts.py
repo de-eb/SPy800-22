@@ -59,7 +59,7 @@ class STS:
 
     ALPHA = 0.01  # Significance level
 
-    def __init__(self, seq_len, seq_num, proc_num=1) -> None:
+    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1):
         """
         Parameters
         ----------
@@ -118,7 +118,7 @@ class STS:
     def results(self):
         return self.__results
 
-    def read_bits(self, file_path: str, fmt)  -> None:
+    def read_bits(self, file_path: str, fmt: Enum)  -> None:
         """
         Read data from a file and convert it to a binary sequence.
 
@@ -166,7 +166,7 @@ class STS:
             self.__sequence, (self.__sequence_num, self.__sequence_len))
         self.__is_ready = True
     
-    def run(self):
+    def run(self) -> None:
         """
         Run the test. If the processes_num is set to 2 or more
         in the instantiation, the test will be parallelized.
@@ -193,7 +193,7 @@ class STS:
         self.__end_time = datetime.now()
         self.__is_finished = True
     
-    def save_report(self, file_path):
+    def save_report(self, file_path: str) -> None:
         """
         Generate and save CSV of test results.
         Note that if a file with the same path already exists,
@@ -223,7 +223,7 @@ class STS:
                     if test.ID == res[0]:
                         f.write(test.report(res[1]))
     
-    def __read_bits_in_ascii_format(self, file_path):
+    def __read_bits_in_ascii_format(self, file_path: str) -> None:
         with open(file_path, mode='r') as f:
             for n, byte in enumerate(iter(lambda:f.read(1), "")):
                 if n >= self.__sequence.size:
@@ -233,7 +233,7 @@ class STS:
                 else:
                     raise IllegalBitError(STS.READ_AS.ASCII)
 
-    def __read_bits_in_byte_format(self, file_path):
+    def __read_bits_in_byte_format(self, file_path: str) -> None:
         with open(file_path, mode='rb') as f:
             for n, byte in enumerate(iter(lambda:f.read(1), b'')):
                 if n >= self.__sequence.size:
@@ -243,7 +243,8 @@ class STS:
                 else:
                     raise IllegalBitError(STS.READ_AS.BYTE)
     
-    def __read_bits_in_binary_format(self, file_path, reverse=False):
+    def __read_bits_in_binary_format(
+            self, file_path: str, reverse: bool =False) -> None:
         n = 0  # Bit counter
         with open(file_path, mode='rb') as f:
             for byte in iter(lambda:f.read(1), b''):
@@ -257,7 +258,7 @@ class STS:
                         self.__sequence[n] = (bits >> (7-i)) & 1
                     n += 1
     
-    def run_wrapper(self, args):
+    def run_wrapper(self, args: list) -> list:
         """
         Wrapper function for parallel processing.
         Do not access this method from outside.
@@ -266,7 +267,7 @@ class STS:
         result.extend(self.__tests[args[0]].func(self.__sequence[args[1]]))
         return result
     
-    def __sort_results(self, results):
+    def __sort_results(self, results: list) -> None:
         results.sort(key=lambda x: x[1])
         results.sort()
         self.__results = []
@@ -279,7 +280,7 @@ class STS:
             self.__results[idx][1].append(i[2:])
             prev_id = i[0]
     
-    def __assess_results(self): 
+    def __assess_results(self) -> None:
         return
 
 
@@ -293,7 +294,7 @@ class InvalidSettingError(STSError):
     """
     Raised when an invalid test parameter is set.
     """
-    def __init__(self, message):
+    def __init__(self, message: str):
         self.message = message
     
     def __str__(self):
@@ -303,7 +304,7 @@ class IllegalBitError(STSError):
     """
     Raised when data different from user setting format is read.
     """
-    def __init__(self, fmt):
+    def __init__(self, fmt: Enum):
         if fmt == STS.READ_AS.ASCII:
             annotation = "0x30 or 0x31"
         elif fmt == STS.READ_AS.BYTE:
@@ -319,7 +320,7 @@ class BitShortageError(STSError):
     """
     Raised when the number of bits in the input file is less than user setting.
     """
-    def __init__(self, set_bits, read_bits):
+    def __init__(self, set_bits: int, read_bits: int):
         self.message = (
             "The set value ({} bits) exceeds the bits read ({} bits)."
             .format(set_bits, read_bits)
@@ -332,7 +333,7 @@ class InvalidProceduralError(STSError):
     """
     Raised when methods are called in a different order than expected.
     """
-    def __init__(self, message):
+    def __init__(self, message: str):
         self.message = message
     
     def __str__(self):
