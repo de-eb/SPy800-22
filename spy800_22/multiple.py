@@ -1,15 +1,35 @@
-from tests.base import Base, InvalidSettingError
-from tests.monobit import FrequencyTest
-from tests.frequency import BlockFrequencyTest
+from spy800_22.sts import STS, InvalidSettingError
+from spy800_22.monobit import FrequencyTest
+from spy800_22.frequency import BlockFrequencyTest
 
-class Multiple(Base):
+class Multiple(STS):
     """
     STS Multiple Test class
     =======================
-    Implementation of interface for multiple tests.
+    Interface for multiple tests.
     
     Attributes
     ----------
+    sequence_len : int
+        Bit length of each sequence.
+    
+    sequence_num : int
+        Number of sequences.
+    
+    sequence : ndarray uint8
+        Sequence. None if not yet loaded.
+    
+    process_num : int
+        Number of processes for running tests in parallel.
+    
+    is_ready : bool
+        Whether the test can be performed.
+    
+    is_finished : bool
+        Whether the test has been completed.
+    
+    results : list
+        Test results. None if the test has not been completed.
     """
     ID = None
     NAME = "Multiple"
@@ -69,18 +89,18 @@ class Multiple(Base):
         blk_len_entropy : int
             Block length in "Approximate entropy Test".
         """
-        Base.__init__(self, seq_len, seq_num, proc_num)
+        STS.__init__(self, seq_len, seq_num, proc_num)
         if choice is not None and not isinstance(choice, list):
             msg = "Test choice must be a list of Enums (Multiple.TestID.xxx)"\
                   " or None."
             raise InvalidSettingError(msg)
         elif choice is None:
-            choice = [i for i in Base.TestID]
+            choice = [i for i in STS.TestID]
 
         tests = []
-        if Base.TestID.FREQUENCY in choice:
+        if STS.TestID.FREQUENCY in choice:
             tests.append(FrequencyTest(seq_len, seq_num, init=False))
-        if Base.TestID.BLOCKFREQUENCY in choice:
+        if STS.TestID.BLOCKFREQUENCY in choice:
             tests.append(
                 BlockFrequencyTest(
                     seq_len, seq_num, blk_len_blockfrequency, init=False))
@@ -90,8 +110,4 @@ class Multiple(Base):
                   " Test choice must be a list of Enums (Multiple.TestID.xxx)"\
                   " or None."
             raise InvalidSettingError(msg)
-        self._Base__tests = tests
-    
-    # def info(self):
-    #     infos = [i.info() for i in tests]
-    #     return infos
+        self._STS__tests = tests
