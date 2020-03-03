@@ -214,14 +214,17 @@ class STS:
                 self.__start_time.strftime('%Y/%m/%d,%H:%M:%S')))
             f.write("\nEnd,{}\n".format(
                 self.__end_time.strftime('%Y/%m/%d,%H:%M:%S')))
-            f.write("\nFile,{}\n".format(self.__input_path))
+            f.write("File,{}\n".format(self.__input_path))
             f.write("Sequence length,{}\n".format(self.__sequence_len))
             f.write("Number of sequence,{}\n".format(self.__sequence_num))
 
+            f.write("\nSummary\n")
+
+            f.write("\nComputational Information\n")
             for test in self.__tests:
                 for res in self.__results:
                     if test.ID == res[0]:
-                        f.write(test.report(res[1]))
+                        f.write("\n{}\n".format(test.report(res[1])))
     
     def __read_bits_in_ascii_format(self, file_path: str) -> None:
         with open(file_path, mode='r') as f:

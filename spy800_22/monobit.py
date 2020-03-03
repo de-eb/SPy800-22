@@ -90,8 +90,7 @@ class FrequencyTest(STS):
         Use save_report() to generate a CSV for the entire test.
         """
         msg = FrequencyTest.NAME + "\n"
-        msg += "Partial results\n"
-        msg += "SequenceID,p-value,zeros,ones\n"
+        msg += "\nSequenceID,p-value,zeros,ones\n"
         for i, j in enumerate(results):
             msg += "{},{},{},{}\n".format(i, j[0], j[1], j[2])
         return msg
