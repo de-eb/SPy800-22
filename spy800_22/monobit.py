@@ -1,11 +1,11 @@
 # monobit.py
 
-from tests.base import Base
+from spy800_22.sts import STS
 import numpy as np
 from math import sqrt, erfc
 
 
-class FrequencyTest(Base):
+class FrequencyTest(STS):
     """
     Frequency (Monobit) Test
     ========================
@@ -13,9 +13,28 @@ class FrequencyTest(Base):
 
     Attributes
     ----------
-
+    sequence_len : int
+        Bit length of each sequence.
+    
+    sequence_num : int
+        Number of sequences.
+    
+    sequence : ndarray uint8
+        Sequence. None if not yet loaded.
+    
+    process_num : int
+        Number of processes for running tests in parallel.
+    
+    is_ready : bool
+        Whether the test can be performed.
+    
+    is_finished : bool
+        Whether the test has been completed.
+    
+    results : list
+        Test results. None if the test has not been completed.
     """
-    ID = Base.TestID.FREQUENCY
+    ID = STS.TestID.FREQUENCY
     NAME = "Frequency (Monobit) Test"
 
     def __init__(self, seq_len, seq_num, proc_num=1, init=True) -> None:
@@ -39,7 +58,7 @@ class FrequencyTest(Base):
         if init:
             super().__init__(seq_len, seq_num, proc_num)
 
-    def func(self, bits):
+    def func(self, bits: np.ndarray) -> tuple:
         """
         Main function.
 
@@ -53,8 +72,11 @@ class FrequencyTest(Base):
         p_value : float
             Test result.
         
-        counts : list of int
-            Number of occurrences of 0s and 1s for the entire sequence.
+        zeros : int
+            Number of occurrences of 0s for the entire sequence.
+        
+        ones : int
+            Number of occurrences of 1s for the entire sequence.
         """
         ones = np.count_nonzero(bits)
         zeros = bits.size - ones
