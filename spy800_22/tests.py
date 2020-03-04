@@ -25,7 +25,7 @@ from math import sqrt, log, exp, erfc
 import numpy as np
 import cv2
 from scipy.fftpack import fft
-from scipy.special import gammaincc
+from scipy.special import gammaincc, loggamma
 from spy800_22.sts import STS, InvalidSettingError, StatisticalError
 
 
@@ -421,11 +421,12 @@ class LongestRunOfOnesTest(STS):
         msg += "\nBlock length,{}\n".format(self.__blk_len)
         msg += "Number of blocks,{}\n".format(self.__blk_num)
         msg += "\nSequenceID,p-value,chi_square,Histogram of longest Run\n"
-        msg += (",,,{}\n".format(np.array2string(self.__v, separator=',')
+        msg += (",,,<={}<=\n".format(np.array2string(self.__v, separator=',')
             .replace('[','').replace(']','')))
         for i, j in enumerate(results):
-            msg += "{},{},{},{}".format(i, j[0], j[1], np.array2string(
-                j[2], separator=',').replace('[','').replace(']',''))
+            msg += "{},{},{},{}".format(i, j[0], j[1],
+                np.array2string(j[2], separator=',')
+                .replace('[','').replace(']',''))
             if len(j) > 3:
                 msg += ",{}".format(j[3])
             msg += "\n"
@@ -733,11 +734,6 @@ class NonOverlappingTemplateMatchingTest(STS):
         self.__tpl = np.load(tpl_path)
     
     @property
-    def tpl_len(self):
-        """`int`: Bit length of each template."""
-        return self.__tpl_len
-    
-    @property
     def tpl(self):
         """`ndarrat uint8`: Templates."""
         return self.__tpl
@@ -790,7 +786,7 @@ class NonOverlappingTemplateMatchingTest(STS):
         msg += "\nTemplate length,{}\n".format(self.__tpl.shape[1])
         msg += "Block length,{}\n".format(self.__blk_len)
         msg += "Number of blocks,{}\n".format(self.__blk_num)
-        msg += "Lambda (criteria number of matches),{}\n".format(self.__mean)
+        msg += "Lambda (theoretical mean of matches),{}\n".format(self.__mean)
 
         for i in range(self.__tpl.shape[0]):
             msg += "Template {},=\"{}\",,,,,,,,,,,".format(i, np.array2string(
@@ -811,5 +807,135 @@ class NonOverlappingTemplateMatchingTest(STS):
                     msg += "{},".format(j[3][k])
                 else:
                     msg += ","
+            msg += "\n"
+        return msg
+
+
+class OverlappingTemplateMatchingTest(STS):
+    """Ooverlapping Template Matching Test
+
+    Attributes
+    ----------
+    ID : `Enum`
+        A unique identifier for the class.
+    NAME : `str`
+        A unique test name for the class.
+    
+    """
+
+    ID = STS.TestID.OVERLAPPING
+    NAME = "Overlapping Template Matching Test"
+
+    def __init__(self, seq_len: int, seq_num: int, tpl_len: int =9,
+            proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
+        """Set the test parameters.
+
+        Parameters
+        ----------
+        seq_len : `int`
+            Bit length of each split sequence.
+        seq_num : `int`
+            Number of sequences.
+            If `1` or more, the sequence is split and tested separately.
+        tpl_len : `int`, optional
+            Bit length of each template.
+        proc_num : `int`, optional
+            Number of processes for running tests in parallel.
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        init : `bool`, optional
+            If `True`, initialize the super class.
+
+        """
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
+        if tpl_len < 2:
+            msg = "Template length must be at least 2 bits."
+            raise InvalidSettingError(msg)
+        self.__k = 5
+        self.__blk_len = 1032
+        self.__blk_num = seq_len // self.__blk_len
+        if self.__blk_num < 1:
+            msg = ("Sequence length must be at least {} bits."
+                .format(self.__blk_len))
+            raise InvalidSettingError(msg)
+        self.__eta = ((self.__blk_len - tpl_len + 1) / 2**tpl_len) / 2
+        self.__pi = np.zeros(self.__k+1)
+        self.__pi[0] = exp(-self.__eta)
+        for i in range(1, self.__k):
+            self.__pi[i] = 0.
+            for j in range(1, i+1):
+                self.__pi[i] += exp(-self.__eta - i*log(2) + j*log(self.__eta)
+                    -loggamma(j+1)+loggamma(i)-loggamma(j)-loggamma(i-j+1))
+        self.__pi[self.__k] = 1 - np.sum(self.__pi)
+        self.__tpl = np.ones((1,tpl_len), dtype='uint8')
+    
+    @property
+    def tpl(self):
+        """`ndarrat uint8`: Templates."""
+        return self.__tpl
+    
+    def func(self, bits) -> tuple:
+        """Evaluates the number of occurrences of a template 
+        (duplicate m-bit pattern) for each M-bit subsequence.
+
+        Parameters
+        ----------
+        bits : `1d-ndarray uint8`
+            Binary sequence to be tested.
+        
+        Returns
+        -------
+        p_value : `float`
+            Test result.
+        chi_square : `float`
+            Computed statistic.
+        hist : `1d-ndarray`
+            Histogram of the number of matches in each block.
+        
+        """
+        blk = np.resize(bits, (self.__blk_num, self.__blk_len)).astype('uint8')
+        hist = np.zeros(self.__k+1, dtype='uint8')
+        res = cv2.matchTemplate(blk, self.__tpl, cv2.TM_SQDIFF)
+        match = np.count_nonzero(res <= 0.5, axis=1)
+        for i in range(self.__k):
+            hist[i] = np.count_nonzero(np.logical_and(match > i-1, match <= i))
+        hist[self.__k] = np.count_nonzero(match > i)
+        chi_square = np.sum(
+            (hist - self.__blk_num*self.__pi)**2 / (self.__blk_num*self.__pi))
+        p_value = gammaincc(self.__k/2, chi_square/2)
+        return p_value, chi_square, hist
+    
+    def report(self, results: list) -> str:
+        """Generate a CSV string from the partial test results.
+
+        Parameters
+        ----------
+        results : `list`
+            List of test results (List of returns of `func` method).
+        
+        Returns
+        -------
+        msg : `str`
+            Generated report.
+        
+        """
+        msg = OverlappingTemplateMatchingTest.NAME + "\n"
+        msg += "\nTemplate length,{}\n".format(self.__tpl.size)
+        msg += "Template,=\"{}\"\n".format(np.array2string(
+                self.__tpl, separator='').replace('[','').replace(']',''))
+        msg += "Block length,{}\n".format(self.__blk_len)
+        msg += "Number of blocks,{}\n".format(self.__blk_num)
+        msg += (",,Pi (theoretical probabilities of matches),{}\n"
+            .format(np.array2string(self.__pi, separator=',')
+            .replace('[','').replace(']','')))
+        msg += "\nSequenceID,p-value,chi_square,Histogram of matches\n"
+        msg += ",,,{}<=\n".format(np.array2string(np.arange(self.__k+1),
+            separator=',').replace('[','').replace(']',''))
+        for i, j in enumerate(results):
+            msg += "{},{},{},{}".format(i, j[0], j[1], np.array2string(
+                j[2], separator=',').replace('[','').replace(']',''))
+            if len(j) > 3:
+                msg += ",{}".format(j[3])
             msg += "\n"
         return msg
