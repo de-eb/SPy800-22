@@ -33,7 +33,7 @@ class STS:
         FREQUENCY = auto()
         BLOCKFREQUENCY = auto()
         RUNS = auto()
-        # LONGESTRUN = "Test for the Longest Run of Ones in a Block"
+        LONGESTRUN = auto()
         # RANK = "Binary Matrix Rank Test"
         # DFT = "Discrete Fourier Transform (Spectral) Test"
         # NONOVERLAPPING = "Non-overlapping Template Matching Test"
