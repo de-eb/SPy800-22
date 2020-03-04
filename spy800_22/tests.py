@@ -20,8 +20,10 @@ Notes
 
 """
 
+import os
 from math import sqrt, log, exp, erfc
 import numpy as np
+import cv2
 from scipy.fftpack import fft
 from scipy.special import gammaincc
 from spy800_22.sts import STS, InvalidSettingError, StatisticalError
@@ -90,9 +92,6 @@ class FrequencyTest(STS):
     def report(self, results: list) -> str:
         """Generate a CSV string from the partial test results.
 
-        Called from the `save_report` method
-        to support report generation for each test.
-
         Parameters
         ----------
         results : `list`
@@ -151,7 +150,8 @@ class BlockFrequencyTest(STS):
 
         """
         if seq_len < blk_len:
-            msg = "The sequence length must be larger than the block length."
+            msg = ("Sequence length must be at least {} bits."
+                .format(blk_len))
             raise InvalidSettingError(msg)
         if init:
             super().__init__(seq_len, seq_num, proc_num, ig_err)
@@ -192,9 +192,6 @@ class BlockFrequencyTest(STS):
     
     def report(self, results: list) -> str:
         """Generate a CSV string from the partial test results.
-
-        Called from the `save_report` method
-        to support report generation for each test.
 
         Parameters
         ----------
@@ -287,9 +284,6 @@ class RunsTest(STS):
     def report(self, results: list) -> str:
         """Generate a CSV string from the partial test results.
 
-        Called from the `save_report` method
-        to support report generation for each test.
-
         Parameters
         ----------
         results : `list`
@@ -346,7 +340,7 @@ class LongestRunOfOnesTest(STS):
 
         """
         if seq_len < 128:
-            msg = "The sequence length must be at least 128 bits."
+            msg = "Sequence length must be at least 128 bits."
             raise InvalidSettingError(msg)
         if init:
             super().__init__(seq_len, seq_num, proc_num, ig_err)
@@ -412,9 +406,6 @@ class LongestRunOfOnesTest(STS):
     def report(self, results: list) -> str:
         """Generate a CSV string from the partial test results.
 
-        Called from the `save_report` method
-        to support report generation for each test.
-
         Parameters
         ----------
         results : `list`
@@ -478,7 +469,7 @@ class BinaryMatrixRankTest(STS):
         self.__m, self.__q = 32, 32
         self.__mat_num = seq_len // (self.__m * self.__q)
         if self.__mat_num == 0:
-            msg = ("The sequence length must be at least {} bits."
+            msg = ("Sequence length must be at least {} bits."
                 .format(self.__m * self.__q))
             raise InvalidSettingError(msg)
         if init:
@@ -537,9 +528,6 @@ class BinaryMatrixRankTest(STS):
     def report(self, results: list) -> str:
         """Generate a CSV string from the partial test results.
 
-        Called from the `save_report` method
-        to support report generation for each test.
-
         Parameters
         ----------
         results : `list`
@@ -554,7 +542,7 @@ class BinaryMatrixRankTest(STS):
         msg = BinaryMatrixRankTest.NAME + "\n"
         msg += "\nMatrix shape,{},{}\n".format(self.__m, self.__q)
         msg += "Number of matrices,{}\n".format(self.__mat_num)
-        msg += "\n,,Reference probability,{}\n".format(np.array2string(
+        msg += "\n,,Criteria probability,{}\n".format(np.array2string(
             self.__prob, separator=',').replace('[','').replace(']',''))
         msg += "SequenceID,p-value,chi_square,Histogram of Rank\n"
         msg += ",,,{},{},other\n".format(self.__m, self.__m-1)
@@ -655,7 +643,7 @@ class DiscreteFourierTransformTest(STS):
             Number of DFT peaks below threshold.
         
         """
-        bits = bits*2 - 1
+        bits = 2*bits - 1
         magnitude = np.abs(fft(bits)[:bits.size // 2])
         count = np.count_nonzero(magnitude < self.__threshold)
         percentile = 100*count / (bits.size/2)
@@ -665,9 +653,6 @@ class DiscreteFourierTransformTest(STS):
     
     def report(self, results: list) -> str:
         """Generate a CSV string from the partial test results.
-
-        Called from the `save_report` method
-        to support report generation for each test.
 
         Parameters
         ----------
@@ -690,4 +675,141 @@ class DiscreteFourierTransformTest(STS):
                 msg += ",{}".format(j[3])
             msg += "\n"
         return msg
+
+
+class NonOverlappingTemplateMatchingTest(STS):
+    """Non-overlapping Template Matching Test
+
+    Attributes
+    ----------
+    ID : `Enum`
+        A unique identifier for the class.
+    NAME : `str`
+        A unique test name for the class.
     
+    """
+
+    ID = STS.TestID.NONOVERLAPPING
+    NAME = "Non-overlapping Template Matching Test"
+
+    def __init__(self, seq_len: int, seq_num: int, tpl_len: int =9,
+            proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
+        """Set the test parameters.
+
+        Parameters
+        ----------
+        seq_len : `int`
+            Bit length of each split sequence.
+        seq_num : `int`
+            Number of sequences.
+            If `1` or more, the sequence is split and tested separately.
+        tpl_len : `int`, optional
+            Bit length of each template. Can be set from 2 to 16.
+        proc_num : `int`, optional
+            Number of processes for running tests in parallel.
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        init : `bool`, optional
+            If `True`, initialize the super class.
+
+        """
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
+        tpl_path = "spy800_22/_templates/tpl{}.npy".format(tpl_len)
+        if tpl_len < 2 or tpl_len > 16:
+            msg = "Template length must be between 2 and 16."
+            raise InvalidSettingError(msg)
+        elif not os.path.isfile(tpl_path):
+            msg = "Template file {} is not found.".format(tpl_len)
+            raise InvalidSettingError(msg)
+        self.__blk_num = 8
+        self.__blk_len = seq_len // self.__blk_num
+        if self.__blk_len <= tpl_len + 1:
+            msg = ("Sequence length must be at least {} bits."
+                .format((tpl_len+2)*self.__blk_num))
+            raise InvalidSettingError(msg)
+        self.__mean = (self.__blk_len - tpl_len + 1) / 2**tpl_len
+        self.__var = self.__blk_len*(1/2**tpl_len - (2*tpl_len-1)/2**(2*tpl_len))
+        self.__tpl = np.load(tpl_path)
+    
+    @property
+    def tpl_len(self):
+        """`int`: Bit length of each template."""
+        return self.__tpl_len
+    
+    @property
+    def tpl(self):
+        """`ndarrat uint8`: Templates."""
+        return self.__tpl
+    
+    def func(self, bits) -> tuple:
+        """Evaluates the number of occurrences of templates 
+        (unique m-bit patterns) for each M-bit subsequence.
+
+        Parameters
+        ----------
+        bits : `1d-ndarray uint8`
+            Binary sequence to be tested.
+        
+        Returns
+        -------
+        p_value : `1d-ndarray float`
+            Test results for each template.
+        chi_square : `1d-ndarray float`
+            Computed statistics for each template.
+        match : `2d-ndarray int`
+            Number of matches in each block for each template.
+        
+        """
+        bits = np.resize(
+            bits, (self.__blk_num, self.__blk_len)).astype('uint8')
+        match = np.zeros((self.__tpl.shape[0], self.__blk_num), dtype='uint8')
+        for i in range(self.__tpl.shape[0]):
+            res = cv2.matchTemplate(
+                bits, self.__tpl[i].reshape((1,-1)), cv2.TM_SQDIFF)
+            match[i] = np.count_nonzero(res <= 0.5, axis=1)
+        chi_square = np.sum(((match - self.__mean)/self.__var**0.5)**2, axis=1)  # why?
+        p_value = gammaincc(self.__blk_num/2 , chi_square/2)
+        return p_value, chi_square, match
+    
+    def report(self, results: list) -> str:
+        """Generate a CSV string from the partial test results.
+
+        Parameters
+        ----------
+        results : `list`
+            List of test results (List of returns of `func` method).
+        
+        Returns
+        -------
+        msg : `str`
+            Generated report.
+        
+        """
+        msg = NonOverlappingTemplateMatchingTest.NAME + "\n"
+        msg += "\nTemplate length,{}\n".format(self.__tpl.shape[1])
+        msg += "Block length,{}\n".format(self.__blk_len)
+        msg += "Number of blocks,{}\n".format(self.__blk_num)
+        msg += "Lambda (criteria number of matches),{}\n".format(self.__mean)
+
+        for i in range(self.__tpl.shape[0]):
+            msg += "Template {},=\"{}\",,,,,,,,,,,".format(i, np.array2string(
+                self.__tpl[i], separator='').replace('[','').replace(']',''))
+        msg += "\n\n"
+        for i in range(self.__tpl.shape[0]):
+            msg += "SequenceID,p-value,chi_square,Number of matches,,,,,,,,,"
+        msg += "\n"
+        for i in range(self.__tpl.shape[0]):
+            msg += ",,,B0,B1,B2,B3,B4,B5,B6,B7,,"
+        msg += "\n"
+        for i, j in enumerate(results):
+            for k in range(self.__tpl.shape[0]):
+                msg += "{},{},{},{},".format(i, j[0][k], j[1][k],
+                    np.array2string(j[2][k], separator=',')
+                    .replace('[','').replace(']',''))
+                if len(j) > 3:
+                    msg += "{},".format(j[3][k])
+                else:
+                    msg += ","
+            msg += "\n"
+        return msg
