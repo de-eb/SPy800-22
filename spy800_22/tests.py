@@ -22,7 +22,7 @@ Notes
 
 from spy800_22.sts import STS, InvalidSettingError, StatisticalError
 import numpy as np
-from math import sqrt, erfc
+from math import sqrt, exp, erfc
 from scipy.special import gammaincc
 
 
@@ -438,4 +438,161 @@ class LongestRunOfOnesTest(STS):
                 msg += ",{}".format(j[3])
             msg += "\n"
         return msg
+
+
+class BinaryMatrixRankTest(STS):
+    """Binary Matrix Rank Test
+
+    Attributes
+    ----------
+    ID : `Enum`
+        A unique identifier for the class.
+    NAME : `str`
+        A unique test name for the class.
+    
+    """
+
+    ID = STS.TestID.RANK
+    NAME = "Binary Matrix Rank Test"
+
+    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
+            ig_err: bool =False, init: bool =True) -> None:
+        """Set the test parameters.
+
+        Parameters
+        ----------
+        seq_len : `int`
+            Bit length of each split sequence.
+        seq_num : `int`
+            Number of sequences.
+            If `1` or more, the sequence is split and tested separately.
+        proc_num : `int`, optional
+            Number of processes for running tests in parallel.
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        init : `bool`, optional
+            If `True`, initialize the super class.
+
+        """
+        self.__m, self.__q = 32, 32
+        self.__mat_num = seq_len // (self.__m * self.__q)
+        if self.__mat_num == 0:
+            msg = ("The sequence length must be at least {} bits."
+                .format(self.__m * self.__q))
+            raise InvalidSettingError(msg)
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
+        self.__prob = np.zeros(3)
+        for i, r in enumerate([self.__m, self.__m-1]):
+            j = np.arange(r, dtype=float)
+            prod = np.prod(
+                (1-2**(j-self.__m)) * (1-2**(j-self.__q)) / (1-2**(j-r)))
+            self.__prob[i] = (
+                2**(r*(self.__m + self.__q - r) - self.__m*self.__q) * prod)
+        self.__prob[2] = 1 - (self.__prob[0] + self.__prob[1])
+    
+    @property
+    def mat_shape(self):
+        """`tuple`: Matrix shape used for Rank calculation."""
+        return self.__m, self.__q
+    
+    @property
+    def mat_num(self):
+        """`int`: Number of matrices."""
+        return self.__mat_num
+        
+    def func(self, bits: np.ndarray) -> tuple:
+        """Evaluate the Rank of disjoint sub-matrices of the entire sequence.
+
+        Parameters
+        ----------
+        bits : `1d-ndarray uint8`
+            Binary sequence to be tested.
+        
+        Returns
+        -------
+        p_value : `float`
+            Test result.
+        chi_square : `float`
+            Computed statistic.
+        freq : `1d-ndarray`
+            Number of occurrences of M and M-1 and other Ranks,
+            where M is the length of a matrix row or column.
+        
+        """
+        freq = np.zeros(3, dtype=int)
+        rank = np.zeros(self.__mat_num, dtype=int)
+        blk = np.resize(bits, (self.__mat_num, self.__m*self.__q))
+        for i in range(self.__mat_num):
+            rank[i] = self.__matrix_rank(blk[i].reshape((self.__m,self.__q)))
+        freq[0] = np.count_nonzero(rank == self.__m)
+        freq[1] = np.count_nonzero(rank == self.__m-1)
+        freq[2] = self.__mat_num - (freq[0] + freq[1])
+        chi_square = np.sum((freq-self.__mat_num*self.__prob)**2
+                            / (self.__mat_num*self.__prob))
+        p_value = exp(-chi_square/2)
+        return p_value, chi_square, freq
+
+    def report(self, results: list) -> str:
+        """Generate a CSV string from the partial test results.
+
+        Called from the `save_report` method
+        to support report generation for each test.
+
+        Parameters
+        ----------
+        results : `list`
+            List of test results (List of returns of `func` method).
+        
+        Returns
+        -------
+        msg : `str`
+            Generated report.
+        
+        """
+        msg = BinaryMatrixRankTest.NAME + "\n"
+        msg += "\nMatrix shape,{},{}\n".format(self.__m, self.__q)
+        msg += "Number of matrices,{}\n".format(self.__mat_num)
+        msg += "\n,,Reference probability,{}\n".format(np.array2string(
+            self.__prob, separator=',').replace('[','').replace(']',''))
+        msg += "SequenceID,p-value,chi_square,Histogram of Rank\n"
+        msg += ",,,{},{},other\n".format(self.__m, self.__m-1)
+        for i, j in enumerate(results):
+            msg += "{},{},{},{}".format(i, j[0], j[1], np.array2string(
+                j[2], separator=',').replace('[','').replace(']',''))
+            if len(j) > 3:
+                msg += ",{}".format(j[3])
+            msg += "\n"
+        return msg
+    
+    def __matrix_rank(self, mat):
+        """Calculate Rank by elementary row operations.
+
+        Implementation to avoid using `numpy.linalg.matrix_rank`.
+
+        Parameters
+        ----------
+        mat : `2d-ndarray int`
+            Binary matrix to be calculated.
+        
+        Returns
+        -------
+        rank : `int`
+            Rank of the matrix.
+        
+        """
+        i, j, k = 0, 0, 0
+        for _ in range(mat.shape[1]):
+            ref = np.nonzero(mat[j:mat.shape[1],k])[0]
+            if ref.size != 0:
+                i = ref[0] + j
+                if i != j:
+                    mat[[i,j]] = mat[[j,i]]
+                mat[np.nonzero(mat[j+1:mat.shape[0],k])[0]+j+1] ^= mat[j]
+                j += 1
+                k += 1
+            else:
+                k += 1
+        rank = np.count_nonzero(np.count_nonzero(mat, axis=1))
+        return rank
     
