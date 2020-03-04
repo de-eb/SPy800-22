@@ -145,7 +145,7 @@ class STS:
             msg = "File \"{}\" is not found.".format(file_path)
             raise InvalidSettingError(msg)
         self.__sequence = np.zeros(
-            self.__sequence_len*self.__sequence_num, dtype='uint8')
+            self.__sequence_len*self.__sequence_num, dtype='int8')
 
         total_bits = os.path.getsize(file_path)
         if fmt == STS.ReadAs.BIGENDIAN or fmt == STS.ReadAs.LITTLEENDIAN:

@@ -20,10 +20,11 @@ Notes
 
 """
 
-from spy800_22.sts import STS, InvalidSettingError, StatisticalError
+from math import sqrt, log, exp, erfc
 import numpy as np
-from math import sqrt, exp, erfc
+from scipy.fftpack import fft
 from scipy.special import gammaincc
+from spy800_22.sts import STS, InvalidSettingError, StatisticalError
 
 
 class FrequencyTest(STS):
@@ -63,7 +64,7 @@ class FrequencyTest(STS):
         if init:
             super().__init__(seq_len, seq_num, proc_num, ig_err)
 
-    def func(self, bits: np.ndarray) -> tuple:
+    def func(self, bits) -> tuple:
         """Evaluate the uniformity of 0s and 1s for the entire sequence.
 
         Parameters
@@ -167,7 +168,7 @@ class BlockFrequencyTest(STS):
         """`int`: Number of blocks."""
         return self.__blk_num
     
-    def func(self, bits: np.ndarray) -> tuple:
+    def func(self, bits) -> tuple:
         """Evaluate the proportion of 1s for each M-bit subsequence.
 
         Parameters
@@ -255,7 +256,7 @@ class RunsTest(STS):
         if init:
             super().__init__(seq_len, seq_num, proc_num, ig_err)
         
-    def func(self, bits: np.ndarray) -> tuple:
+    def func(self, bits) -> tuple:
         """Evaluate the total number of "Run"s for the entire sequence,
         where a "Run" is a continuation of the same bit.
 
@@ -375,7 +376,7 @@ class LongestRunOfOnesTest(STS):
         """`int`: Number of blocks."""
         return self.__blk_num
         
-    def func(self, bits: np.ndarray) -> tuple:
+    def func(self, bits) -> tuple:
         """Evaluate the longest "Run" of 1s for each M-bit subsequence,
         where a "Run" is a continuation of the same bit.
 
@@ -501,7 +502,7 @@ class BinaryMatrixRankTest(STS):
         """`int`: Number of matrices."""
         return self.__mat_num
         
-    def func(self, bits: np.ndarray) -> tuple:
+    def func(self, bits) -> tuple:
         """Evaluate the Rank of disjoint sub-matrices of the entire sequence.
 
         Parameters
@@ -595,4 +596,98 @@ class BinaryMatrixRankTest(STS):
                 k += 1
         rank = np.count_nonzero(np.count_nonzero(mat, axis=1))
         return rank
+
+
+class DiscreteFourierTransformTest(STS):
+    """Discrete Fourier Transform (Spectral) Test
+
+    Attributes
+    ----------
+    ID : `Enum`
+        A unique identifier for the class.
+    NAME : `str`
+        A unique test name for the class.
+    
+    """
+
+    ID = STS.TestID.DFT
+    NAME = "Discrete Fourier Transform (Spectral) Test"
+
+    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
+            ig_err: bool =False, init: bool =True) -> None:
+        """Set the test parameters.
+
+        Parameters
+        ----------
+        seq_len : `int`
+            Bit length of each split sequence.
+        seq_num : `int`
+            Number of sequences.
+            If `1` or more, the sequence is split and tested separately.
+        proc_num : `int`, optional
+            Number of processes for running tests in parallel.
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        init : `bool`, optional
+            If `True`, initialize the super class.
+
+        """
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
+        self.__threshold = sqrt(log(1/0.05)*seq_len)
+        self.__ref = 0.95 * seq_len / 2
+    
+    def func(self, bits) -> tuple:
+        """Evaluate the peak heights in DFT of the sequence.
+
+        Parameters
+        ----------
+        bits : `1d-ndarray uint8`
+            Binary sequence to be tested.
+        
+        Returns
+        -------
+        p_value : `float`
+            Test result.
+        percentile : `float`
+            Percentage of DFT peaks below threshold.
+        count : `int`
+            Number of DFT peaks below threshold.
+        
+        """
+        bits = bits*2 - 1
+        magnitude = np.abs(fft(bits)[:bits.size // 2])
+        count = np.count_nonzero(magnitude < self.__threshold)
+        percentile = 100*count / (bits.size/2)
+        p_value = erfc(
+            abs((count-self.__ref)/sqrt(bits.size*0.95*0.05/4)) / sqrt(2))
+        return p_value, percentile, count
+    
+    def report(self, results: list) -> str:
+        """Generate a CSV string from the partial test results.
+
+        Called from the `save_report` method
+        to support report generation for each test.
+
+        Parameters
+        ----------
+        results : `list`
+            List of test results (List of returns of `func` method).
+        
+        Returns
+        -------
+        msg : `str`
+            Generated report.
+        
+        """
+        msg = DiscreteFourierTransformTest.NAME + "\n"
+        msg += "\nPeak threshold,{}\n".format(self.__threshold)
+        msg += "Reference number of peak,{}\n".format(self.__ref)
+        msg += "\nSequenceID,p-value,percentage,peaks below threshold\n"
+        for i, j in enumerate(results):
+            msg += "{},{},{},{}".format(i, j[0], j[1], j[2])
+            if len(j) > 3:
+                msg += ",{}".format(j[3])
+            msg += "\n"
+        return msg
     
