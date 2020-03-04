@@ -20,7 +20,7 @@ Notes
 
 """
 
-from spy800_22.sts import STS, InvalidSettingError
+from spy800_22.sts import STS, InvalidSettingError, StatisticalError
 import numpy as np
 from math import sqrt, erfc
 from scipy.special import gammaincc
@@ -42,7 +42,7 @@ class FrequencyTest(STS):
     NAME = "Frequency (Monobit) Test"
 
     def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
-            init: bool =True) -> None:
+            ig_err: bool =False, init: bool =True) -> None:
         """Set the test parameters.
 
         Parameters
@@ -54,12 +54,14 @@ class FrequencyTest(STS):
             If `1` or more, the sequence is split and tested separately.
         proc_num : `int`, optional
             Number of processes for running tests in parallel.
-        init : `bool`
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        init : `bool`, optional
             If `True`, initialize the super class.
         
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num)
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
 
     def func(self, bits: np.ndarray) -> tuple:
         """Evaluate the uniformity of 0s and 1s for the entire sequence.
@@ -102,7 +104,7 @@ class FrequencyTest(STS):
         
         """
         msg = FrequencyTest.NAME + "\n"
-        msg += "\nSequenceID,p-value,zeros,ones\n"
+        msg += "\nSequenceID,p-value,zeros count,ones count\n"
         for i, j in enumerate(results):
             msg += "{},{},{},{}\n".format(i, j[0], j[1], j[2])
         return msg
@@ -124,7 +126,7 @@ class BlockFrequencyTest(STS):
     NAME = "Frequency Test within a Block"
 
     def __init__(self, seq_len: int, seq_num: int, blk_len: int =128,
-            proc_num: int =1, init: bool =True) -> None:
+            proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
         """Set the test parameters.
 
         Parameters
@@ -138,7 +140,9 @@ class BlockFrequencyTest(STS):
             Bit length of each block.
         proc_num : `int`, optional
             Number of processes for running tests in parallel.
-        init : `bool`
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        init : `bool`, optional
             If `True`, initialize the super class.
 
         """
@@ -146,7 +150,7 @@ class BlockFrequencyTest(STS):
             msg = "The sequence length must be larger than the block length."
             raise InvalidSettingError(msg)
         if init:
-            super().__init__(seq_len, seq_num, proc_num)
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
         self.__blk_len = blk_len
         self.__blk_num = seq_len // blk_len
     
@@ -206,3 +210,96 @@ class BlockFrequencyTest(STS):
         for i, j in enumerate(results):
             msg += "{},{},{}\n".format(i, j[0], j[1])
         return msg
+
+
+class RunsTest(STS):
+    """Runs Test
+
+    Attributes
+    ----------
+    ID : `Enum`
+        A unique identifier for the class.
+    NAME : `str`
+        A unique test name for the class.
+    
+    """
+
+    ID = STS.TestID.RUNS
+    NAME = "Runs Test"
+
+    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
+            ig_err: bool =False, init: bool =True) -> None:
+        """Set the test parameters.
+
+        Parameters
+        ----------
+        seq_len : `int`
+            Bit length of each split sequence.
+        seq_num : `int`
+            Number of sequences.
+            If `1` or more, the sequence is split and tested separately.
+        proc_num : `int`, optional
+            Number of processes for running tests in parallel.
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        init : `bool`, optional
+            If `True`, initialize the super class.
+
+        """
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
+        
+    def func(self, bits: np.ndarray) -> tuple:
+        """Evaluate the total number of "Run"s for the entire sequence,
+        where a "Run" is a continuation of the same bit.
+
+        Parameters
+        ----------
+        bits : `1d-ndarray uint8`
+            Binary sequence to be tested.
+        
+        Returns
+        -------
+        p_value : `float`
+            Test result.
+        pi : `float`
+            Estimator criteria.
+        run : `int`
+            Total of "Run"s.
+        
+        """
+        pi = np.count_nonzero(bits) / bits.size
+        if abs(pi-0.5) > 2/sqrt(bits.size):
+            msg = "Estimator criteria not met. (Pi = {})".format(pi)
+            raise StatisticalError(msg, 0.0, pi, None)
+        run = np.count_nonzero(np.diff(bits))
+        p_value = erfc(
+            abs(run-2*bits.size*pi*(1-pi)) / (2*pi*(1-pi)*sqrt(2*bits.size)))
+        return p_value, pi, run
+
+    def report(self, results: list) -> str:
+        """Generate a CSV string from the partial test results.
+
+        Called from the `save_report` method
+        to support report generation for each test.
+
+        Parameters
+        ----------
+        results : `list`
+            List of test results (List of returns of `func` method).
+        
+        Returns
+        -------
+        msg : `str`
+            Generated report.
+        
+        """
+        msg = RunsTest.NAME + "\n"
+        msg += "\nSequenceID,p-value,pi,Runs total\n"
+        for i, j in enumerate(results):
+            msg += "{},{},{},{}".format(i, j[0], j[1], j[2])
+            if len(j) > 3:
+                msg += ",{}".format(j[3])
+            msg += "\n"
+        return msg
+    
