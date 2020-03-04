@@ -34,17 +34,17 @@ class STS:
         BLOCKFREQUENCY = auto()
         RUNS = auto()
         LONGESTRUN = auto()
-        # RANK = "Binary Matrix Rank Test"
-        # DFT = "Discrete Fourier Transform (Spectral) Test"
-        # NONOVERLAPPING = "Non-overlapping Template Matching Test"
-        # OVERLAPPING = "Overlapping Template Matching Test"
-        # UNIVERSAL = "Maurer's \"Universal Statistical\" Test"
-        # COMPLEXITY = "Linear complexity Test"
-        # SERIAL = "Serial Test"
-        # ENTROPY = "Approximate entropy Test"
-        # CUSUM = "Cumulative sums (cusum) Test"
-        # EXCURSIONS = "Random excursions Test"
-        # EXCURSIONSVAR = "Random excursions variant Test"
+        RANK = auto()
+        DFT = auto()
+        NONOVERLAPPING = auto()
+        OVERLAPPING = auto()
+        UNIVERSAL = auto()
+        COMPLEXITY = auto()
+        SERIAL = auto()
+        ENTROPY = auto()
+        CUSUM = auto()
+        EXCURSIONS = auto()
+        EXCURSIONSVAR = auto()
 
     class ReadAs(Enum):
         ASCII = auto()
