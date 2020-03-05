@@ -401,16 +401,14 @@ class LongestRunOfOnesTest(STS):
         msg += "\nBlock length,{}\n".format(self.__blk_len)
         msg += "Number of blocks,{}\n".format(self.__blk_num)
         msg += "\nSequenceID,p-value,chi_square,Histogram of longest Run\n"
-        msg += (",,,<={}<=\n".format(np.array2string(self.__v, separator=',')
-            .replace('[','').replace(']','')))
+        msg += (",,,<={}<=\n".format(np.array2string(self.__v, separator=',')))
         for i, j in enumerate(results):
             msg += "{},{},{},{}".format(i, j[0], j[1],
-                np.array2string(j[2], separator=',')
-                .replace('[','').replace(']',''))
+                np.array2string(j[2], separator=','))
             if len(j) > 3:
                 msg += ",{}".format(j[3])
             msg += "\n"
-        return msg
+        return msg.replace('[','').replace(']','')
 
 
 class BinaryMatrixRankTest(STS):
@@ -513,34 +511,20 @@ class BinaryMatrixRankTest(STS):
         msg = BinaryMatrixRankTest.NAME + "\n"
         msg += "\nMatrix shape,{},{}\n".format(self.__m, self.__q)
         msg += "Number of matrices,{}\n".format(self.__mat_num)
-        msg += "\n,,Criteria probability,{}\n".format(np.array2string(
-            self.__prob, separator=',').replace('[','').replace(']',''))
+        msg += "\n,,Criteria probability,{}\n".format(
+            np.array2string(self.__prob, separator=','))
         msg += "SequenceID,p-value,chi_square,Histogram of Rank\n"
         msg += ",,,{},{},other\n".format(self.__m, self.__m-1)
         for i, j in enumerate(results):
-            msg += "{},{},{},{}".format(i, j[0], j[1], np.array2string(
-                j[2], separator=',').replace('[','').replace(']',''))
+            msg += "{},{},{},{}".format(i, j[0], j[1],
+                np.array2string(j[2], separator=','))
             if len(j) > 3:
                 msg += ",{}".format(j[3])
             msg += "\n"
-        return msg
+        return msg.replace('[','').replace(']','')
     
     def __matrix_rank(self, mat):
-        """Calculate Rank by elementary row operations.
-
-        Implementation to avoid using `numpy.linalg.matrix_rank`.
-
-        Parameters
-        ----------
-        mat : `2d-ndarray int`
-            Binary matrix to be calculated.
-        
-        Returns
-        -------
-        rank : `int`
-            Rank of the matrix.
-        
-        """
+        """Calculate Rank by elementary row operations."""
         i, j, k = 0, 0, 0
         for _ in range(mat.shape[1]):
             ref = np.nonzero(mat[j:mat.shape[1],k])[0]
@@ -754,8 +738,8 @@ class NonOverlappingTemplateMatchingTest(STS):
         msg += "Lambda (theoretical mean of matches),{}\n".format(self.__mean)
 
         for i in range(self.__tpl.shape[0]):
-            msg += "Template {},=\"{}\",,,,,,,,,,,".format(i, np.array2string(
-                self.__tpl[i], separator='').replace('[','').replace(']',''))
+            msg += "Template {},=\"{}\",,,,,,,,,,,".format(
+                i, np.array2string(self.__tpl[i], separator=''))
         msg += "\n\n"
         for i in range(self.__tpl.shape[0]):
             msg += "SequenceID,p-value,chi_square,Number of matches,,,,,,,,,"
@@ -766,14 +750,13 @@ class NonOverlappingTemplateMatchingTest(STS):
         for i, j in enumerate(results):
             for k in range(self.__tpl.shape[0]):
                 msg += "{},{},{},{},".format(i, j[0][k], j[1][k],
-                    np.array2string(j[2][k], separator=',')
-                    .replace('[','').replace(']',''))
+                    np.array2string(j[2][k], separator=','))
                 if len(j) > 3:
                     msg += "{},".format(j[3][k])
                 else:
                     msg += ","
             msg += "\n"
-        return msg
+        return msg.replace('[','').replace(']','')
 
 
 class OverlappingTemplateMatchingTest(STS):
@@ -883,22 +866,21 @@ class OverlappingTemplateMatchingTest(STS):
         msg = OverlappingTemplateMatchingTest.NAME + "\n"
         msg += "\nTemplate length,{}\n".format(self.__tpl.size)
         msg += "Template,=\"{}\"\n".format(np.array2string(
-                self.__tpl, separator='').replace('[','').replace(']',''))
+                self.__tpl, separator=''))
         msg += "Block length,{}\n".format(self.__blk_len)
         msg += "Number of blocks,{}\n".format(self.__blk_num)
         msg += (",,Pi (theoretical probabilities of matches),{}\n"
-            .format(np.array2string(self.__pi, separator=',')
-            .replace('[','').replace(']','')))
+            .format(np.array2string(self.__pi, separator=',')))
         msg += "\nSequenceID,p-value,chi_square,Histogram of matches\n"
-        msg += ",,,{}<=\n".format(np.array2string(np.arange(self.__k+1),
-            separator=',').replace('[','').replace(']',''))
+        msg += ",,,{}<=\n".format(
+            np.array2string(np.arange(self.__k+1), separator=','))
         for i, j in enumerate(results):
-            msg += "{},{},{},{}".format(i, j[0], j[1], np.array2string(
-                j[2], separator=',').replace('[','').replace(']',''))
+            msg += "{},{},{},{}".format(i, j[0], j[1],
+                np.array2string(j[2], separator=','))
             if len(j) > 3:
                 msg += ",{}".format(j[3])
             msg += "\n"
-        return msg
+        return msg.replace('[','').replace(']','')
 
 
 class MaurersUniversalStatisticalTest(STS):
@@ -1016,23 +998,7 @@ class MaurersUniversalStatisticalTest(STS):
         return msg
     
     def __packbits(self, x, reverse=True):
-        """Converts a binary matrix to a decimal value.
-
-        Binary matrix is packed row by row.
-
-        Parameters
-        ----------
-        x : `2d-ndarray int`
-            Binary matrix to be converted.
-        reverse : `bool`
-            Conversion mode. If `True`, little endian, otherwise big endian.
-        
-        Returns
-        -------
-        packed : `1d-ndarray int`
-            Matrix of decimal values.
-        
-        """
+        """Converts a binary matrix to a decimal value."""
         p = np.power(2, np.arange(x.shape[-1]))
         if reverse:
             p = p[::-1]
@@ -1139,27 +1105,15 @@ class LinearComplexityTest(STS):
         msg += "\nSequenceID,p-value,chi_square,Histogram of T\n"
         msg += ",,,C0,C1,C2,C3,C4,C5,C6\n"
         for i, j in enumerate(results):
-            msg += "{},{},{},{}".format(i, j[0], j[1], np.array2string(
-                j[2], separator=',').replace('[','').replace(']',''))
+            msg += "{},{},{},{}".format(i, j[0], j[1],
+                np.array2string(j[2], separator=','))
             if len(j) > 3:
                 msg += ",{}".format(j[3])
             msg += "\n"
-        return msg
+        return msg.replace('[','').replace(']','')
     
     def __bma(self, bits):
-        """Berlekamp Massey Algorithm.
-
-        Parameters
-        ----------
-        bits : `1d-ndarray int8`
-            Binary sequence.
-
-        Returns
-        -------
-        l : `int`
-            Linear complexity.
-        
-        """
+        """Berlekamp Massey Algorithm."""
         c, b = np.zeros(bits.size, dtype=int), np.zeros(bits.size, dtype=int)
         c[0], b[0] = 1, 1
         l, m, i = 0, -1, 0
@@ -1173,3 +1127,111 @@ class LinearComplexityTest(STS):
                     m = i
                     b = t
         return l
+
+
+class SerialTest(STS):
+    """Serial Test
+
+    Attributes
+    ----------
+    ID : `Enum`
+        A unique identifier for the class.
+    NAME : `str`
+        A unique test name for the class.
+    
+    """
+
+    ID = STS.TestID.SERIAL
+    NAME = "Serial Test"
+
+    def __init__(self, seq_len: int, seq_num: int, blk_len: int =16,
+            proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
+        """Set the test parameters.
+
+        Parameters
+        ----------
+        seq_len : `int`
+            Bit length of each split sequence.
+        seq_num : `int`
+            Number of sequences.
+            If `1` or more, the sequence is split and tested separately.
+        blk_len : `int`
+            Bit length of each block.
+        proc_num : `int`, optional
+            Number of processes for running tests in parallel.
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        init : `bool`, optional
+            If `True`, initialize the super class.
+
+        """
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
+        if seq_len < blk_len:
+            msg = ("Sequence length must be at least {} bits."
+                .format(blk_len))
+            raise InvalidSettingError(msg)
+        self.__blk_len = blk_len
+    
+    def func(self, bits) -> tuple:
+        """Evaluate the frequency of all possible overlapping m-bit patterns.
+
+        Parameters
+        ----------
+        bits : `1d-ndarray int8`
+            Binary sequence to be tested.
+        
+        Returns
+        -------
+        p_value : `1d-ndarray float`
+            Test results.
+        psi : `1d-ndarray float`
+            Computed statistics.
+        
+        """
+        psi = np.zeros(3)
+        p_value = np.zeros(2)
+        for i in range(len(psi)):
+            psi[i] = self.__psi_square(bits, self.__blk_len-i)
+        p_value[0] = gammaincc(2**(self.__blk_len-1)/2.0, (psi[0]-psi[1])/2.0)
+        p_value[1] = gammaincc(
+            2**(self.__blk_len-2)/2.0, (psi[0]-2*psi[1]+psi[2])/2.0)
+        return p_value, psi
+    
+    def report(self, results: list) -> str:
+        """Generate a CSV string from the partial test results.
+
+        Parameters
+        ----------
+        results : `list`
+            List of test results (List of returns of `func` method).
+        
+        Returns
+        -------
+        msg : `str`
+            Generated report.
+        
+        """
+        msg = SerialTest.NAME + "\n"
+        msg += "\nBlock length,{}\n".format(self.__blk_len)
+        msg += "\nSequenceID,p-value1,p-value2,psi_m,psi_m-1,psi_m-2\n"
+        for i, j in enumerate(results):
+            msg += "{},{},{}".format(i, np.array2string(j[0], separator=','),
+                np.array2string(j[1], separator=','))
+            if len(j) > 3:
+                msg += ",{}".format(j[3])
+            msg += "\n"
+        return msg.replace('[','').replace(']','')
+    
+    def __psi_square(self, x, m):
+        """Compute statistics."""
+        p, k = np.zeros(2**(m+1)-1), np.ones(x.size, dtype=int)
+        j = np.arange(x.size)
+        for i in range(m):
+            ref = x[(i+j) % x.size]
+            k[ref==0] *= 2
+            k[ref==1] = 2*k[ref==1] + 1
+        uniq, counts = np.unique(k, return_counts=True)
+        p[uniq-1] = 1*counts
+        s = np.sum(p[2**m-1 : 2**(m+1)-1]**2) * 2**m/x.size - x.size
+        return s
