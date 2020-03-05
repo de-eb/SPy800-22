@@ -13,6 +13,7 @@ https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software
 
 """
 
+import traceback
 import os
 from datetime import datetime
 from enum import Enum, IntEnum, auto
@@ -206,20 +207,19 @@ class STS:
         
         """
         test, seq_id = args
-        result = [test.ID, seq_id]
+        result = [test.ID, seq_id, None]
         try:
             res = test.func(self.__sequence[seq_id])
         except StatisticalError as err:
-            res = list(err.args + ("StatisticalError",))
+            result[2] = err
             if not self.__ig_err:
-                msg = "{}: ".format(test.NAME) + err.msg
-                raise StatisticalError(msg, None)
+                raise
         except ZeroDivisionError as err:
-            res = [0.0, "ZeroDivisionError"]
+            result[2] = err
             if not self.__ig_err:
-                msg = "{}: Zero Division detected.\n".format(test.NAME)
-                raise ComputationalError(msg)
-        result.extend(res)
+                raise
+        else:
+            result.extend(res)
         return result
     
     def save_report(self, file_path: str) -> None:
@@ -367,10 +367,6 @@ class InvalidProceduralError(STSError):
 
 class StatisticalError(STSError):
     """Raised when significantly biased statistics are calculated."""
-
-    def __init__(self, msg: str, *args):
-        self.msg = msg
-        self.args = args
 
 class ComputationalError(STSError):
     """Raised when an incorrect calculation is detected."""
