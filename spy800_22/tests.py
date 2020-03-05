@@ -174,8 +174,8 @@ class BlockFrequencyTest(STS):
             Computed statistic.
         
         """
-        blk = np.resize(bits, (self.__blk_num, self.__blk_len))
-        sigma = np.sum((np.sum(blk, axis=1)/self.__blk_len - 0.5)**2)
+        bits = np.resize(bits, (self.__blk_num, self.__blk_len))
+        sigma = np.sum((np.sum(bits, axis=1)/self.__blk_len - 0.5)**2)
         chi_square = 4 * self.__blk_len * sigma
         p_value = gammaincc(self.__blk_num/2 , chi_square/2)
         return p_value, chi_square
@@ -369,11 +369,11 @@ class LongestRunOfOnesTest(STS):
             Histogram of the longest "Run" in each block.
         
         """
-        blk = np.pad(
+        bits = np.pad(
             np.resize(bits, (self.__blk_num, self.__blk_len)), [(0,0),(1,1)])
         longest = np.zeros(self.__blk_num, dtype=int)
         for i in range(self.__blk_num):
-            longest[i] = np.max(np.diff(np.where(blk[i]==0)[0]) - 1)
+            longest[i] = np.max(np.diff(np.where(bits[i]==0)[0]) - 1)
         longest[longest < self.__v[0]] = self.__v[0]
         longest[longest > self.__v[-1]] = self.__v[-1]
         hist = np.histogram(longest,
@@ -485,9 +485,9 @@ class BinaryMatrixRankTest(STS):
         """
         freq = np.zeros(3, dtype=int)
         rank = np.zeros(self.__mat_num, dtype=int)
-        blk = np.resize(bits, (self.__mat_num, self.__m*self.__q))
+        bits = np.resize(bits, (self.__mat_num, self.__m*self.__q))
         for i in range(self.__mat_num):
-            rank[i] = self.__matrix_rank(blk[i].reshape((self.__m,self.__q)))
+            rank[i] = self.__matrix_rank(bits[i].reshape((self.__m,self.__q)))
         freq[0] = np.count_nonzero(rank == self.__m)
         freq[1] = np.count_nonzero(rank == self.__m-1)
         freq[2] = self.__mat_num - (freq[0] + freq[1])
@@ -854,9 +854,9 @@ class OverlappingTemplateMatchingTest(STS):
             Histogram of the number of matches in each block.
         
         """
-        blk = np.resize(bits, (self.__blk_num, self.__blk_len)).astype('uint8')
+        bits = np.resize(bits, (self.__blk_num,self.__blk_len)).astype('uint8')
         hist = np.zeros(self.__k+1, dtype='uint8')
-        res = cv2.matchTemplate(blk, self.__tpl, cv2.TM_SQDIFF)
+        res = cv2.matchTemplate(bits, self.__tpl, cv2.TM_SQDIFF)
         match = np.count_nonzero(res <= 0.5, axis=1)
         for i in range(self.__k):
             hist[i] = np.count_nonzero(np.logical_and(match > i-1, match <= i))
@@ -976,14 +976,14 @@ class MaurersUniversalStatisticalTest(STS):
         
         """
         t = np.zeros(2**self.__blk_len)
-        blk = self.__packbits(
+        bits = self.__packbits(
             np.resize(bits, (self.__k+self.__q, self.__blk_len)))
-        uniq, idx = np.unique(blk[:self.__q][::-1], return_index=True)
+        uniq, idx = np.unique(bits[:self.__q][::-1], return_index=True)
         t[uniq] = idx
         s = 0
         for i in range(t.size):
             s += np.sum(np.log2(np.diff(
-                np.append(-t[i], np.where(blk[self.__q:]==i)))))
+                np.append(-t[i], np.where(bits[self.__q:]==i)))))
         phi = s / self.__k
         p_value = erfc(abs(phi-self.__exp_val) / (sqrt(2)*self.__sigma))
         return p_value, phi
@@ -1037,3 +1037,139 @@ class MaurersUniversalStatisticalTest(STS):
         if reverse:
             p = p[::-1]
         return np.dot(x, p)
+
+
+class LinearComplexityTest(STS):
+    """Linear complexity Test
+
+    Attributes
+    ----------
+    ID : `Enum`
+        A unique identifier for the class.
+    NAME : `str`
+        A unique test name for the class.
+    
+    """
+
+    ID = STS.TestID.COMPLEXITY
+    NAME = "Linear complexity Test"
+
+    def __init__(self, seq_len: int, seq_num: int, blk_len: int =500,
+            proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
+        """Set the test parameters.
+
+        Parameters
+        ----------
+        seq_len : `int`
+            Bit length of each split sequence.
+        seq_num : `int`
+            Number of sequences.
+            If `1` or more, the sequence is split and tested separately.
+        blk_len : `int`
+            Bit length of each block.
+        proc_num : `int`, optional
+            Number of processes for running tests in parallel.
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        init : `bool`, optional
+            If `True`, initialize the super class.
+
+        """
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
+        if seq_len < blk_len:
+            msg = ("Sequence length must be at least {} bits."
+                .format(blk_len))
+            raise InvalidSettingError(msg)
+        self.__blk_len = blk_len
+        self.__blk_num = seq_len // blk_len
+        self.__mu = (
+            blk_len/2 + ((-1)**(blk_len+1)+9)/36 - (blk_len/3+2/9)/2**blk_len)
+        self.__pi = np.array(
+            [0.01047, 0.03125, 0.12500, 0.50000, 0.25000, 0.06250, 0.020833])
+    
+    def func(self, bits) -> tuple:
+        """Evaluate the length of the linear feedback shift register (LFSR).
+
+        Parameters
+        ----------
+        bits : `1d-ndarray int8`
+            Binary sequence to be tested.
+        
+        Returns
+        -------
+        p_value : `float`
+            Test result.
+        chi_square : `float`
+            Computed statistic.
+        hist : `1d-ndarray int`
+            Histogram of T.
+        
+        """
+        bits = np.resize(bits, (self.__blk_num, self.__blk_len))
+        l = np.empty(self.__blk_num)
+        for i in range(self.__blk_num):
+            l[i] = self.__bma(bits[i])
+        t = (-1)**self.__blk_len * (l-self.__mu) + 2/9
+        hist = np.histogram(t,
+            bins=[-bits.size, -2.5, -1.5, -0.5, 0.5, 1.5, 2.5, bits.size])[0]
+        chi_square = np.sum(
+            (hist-self.__blk_num*self.__pi)**2 / (self.__blk_num*self.__pi))
+        p_value = gammaincc(6/2.0 , chi_square/2.0)
+        return p_value, chi_square, hist
+    
+    def report(self, results: list) -> str:
+        """Generate a CSV string from the partial test results.
+
+        Parameters
+        ----------
+        results : `list`
+            List of test results (List of returns of `func` method).
+        
+        Returns
+        -------
+        msg : `str`
+            Generated report.
+        
+        """
+        msg = LinearComplexityTest.NAME + "\n"
+        msg += "\nBlock length,{}\n".format(self.__blk_len)
+        msg += "Number of blocks,{}\n".format(self.__blk_num)
+        msg += "Theoretical mean of linear complexity,{}\n".format(self.__mu)
+        msg += "\nSequenceID,p-value,chi_square,Histogram of T\n"
+        msg += ",,,C0,C1,C2,C3,C4,C5,C6\n"
+        for i, j in enumerate(results):
+            msg += "{},{},{},{}".format(i, j[0], j[1], np.array2string(
+                j[2], separator=',').replace('[','').replace(']',''))
+            if len(j) > 3:
+                msg += ",{}".format(j[3])
+            msg += "\n"
+        return msg
+    
+    def __bma(self, bits):
+        """Berlekamp Massey Algorithm.
+
+        Parameters
+        ----------
+        bits : `1d-ndarray int8`
+            Binary sequence.
+
+        Returns
+        -------
+        l : `int`
+            Linear complexity.
+        
+        """
+        c, b = np.zeros(bits.size, dtype=int), np.zeros(bits.size, dtype=int)
+        c[0], b[0] = 1, 1
+        l, m, i = 0, -1, 0
+        for i in range(bits.size):
+            if (bits[i] + np.dot(bits[i-l:i][::-1], c[1:1+l])) % 2 == 1:
+                t = c.copy()
+                c[np.where(b[:l]==1)[0] + i-m] += 1
+                c = c % 2
+                if l <= i>>1:
+                    l = i + 1 - l
+                    m = i
+                    b = t
+        return l
