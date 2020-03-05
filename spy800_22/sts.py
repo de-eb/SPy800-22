@@ -90,24 +90,9 @@ class STS:
         self.__results = None
     
     @property
-    def sequence_len(self):
-        """`int`: Bit length of each split sequence."""
-        return self.__sequence_len
-    
-    @property
-    def sequence_num(self):
-        """`int`: Number of sequences."""
-        return self.__sequence_num
-    
-    @property
     def sequence(self):
-        """`ndarray uint8`: Binary sequence."""
+        """`ndarray uint`: Binary sequence."""
         return self.__sequence
-    
-    @property
-    def process_num(self):
-        """`int`: Number of processes for running tests in parallel."""
-        return self.__process_num
     
     @property
     def is_ready(self):
