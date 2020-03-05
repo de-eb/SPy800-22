@@ -21,7 +21,7 @@ Notes
 """
 
 import os
-from math import sqrt, log, exp, erfc
+from math import sqrt, log, log2, exp, erfc
 import numpy as np
 import cv2
 from scipy.fftpack import fft
@@ -139,7 +139,7 @@ class BlockFrequencyTest(STS):
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
-        blk_len : `int`
+        blk_len : `int`, optional
             Bit length of each block.
         proc_num : `int`, optional
             Number of processes for running tests in parallel.
@@ -1031,7 +1031,7 @@ class LinearComplexityTest(STS):
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
-        blk_len : `int`
+        blk_len : `int`, optional
             Bit length of each block.
         proc_num : `int`, optional
             Number of processes for running tests in parallel.
@@ -1155,7 +1155,7 @@ class SerialTest(STS):
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
-        blk_len : `int`
+        blk_len : `int`, optional
             Bit length of each block.
         proc_num : `int`, optional
             Number of processes for running tests in parallel.
@@ -1218,8 +1218,8 @@ class SerialTest(STS):
         for i, j in enumerate(results):
             msg += "{},{},{}".format(i, np.array2string(j[0], separator=','),
                 np.array2string(j[1], separator=','))
-            if len(j) > 3:
-                msg += ",{}".format(j[3])
+            if len(j) > 2:
+                msg += ",{}".format(j[2])
             msg += "\n"
         return msg.replace('[','').replace(']','')
     
@@ -1234,4 +1234,111 @@ class SerialTest(STS):
         uniq, counts = np.unique(k, return_counts=True)
         p[uniq-1] = 1*counts
         s = np.sum(p[2**m-1 : 2**(m+1)-1]**2) * 2**m/x.size - x.size
+        return s
+
+
+class ApproximateEntropyTest(STS):
+    """Approximate entropy Test
+
+    Attributes
+    ----------
+    ID : `Enum`
+        A unique identifier for the class.
+    NAME : `str`
+        A unique test name for the class.
+    
+    """
+
+    ID = STS.TestID.ENTROPY
+    NAME = "Approximate entropy Test"
+
+    def __init__(self, seq_len: int, seq_num: int, blk_len: int =10,
+            proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
+        """Set the test parameters.
+
+        Parameters
+        ----------
+        seq_len : `int`
+            Bit length of each split sequence.
+        seq_num : `int`
+            Number of sequences.
+            If `1` or more, the sequence is split and tested separately.
+        blk_len : `int`, optional
+            Bit length of each block.
+        proc_num : `int`, optional
+            Number of processes for running tests in parallel.
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        init : `bool`, optional
+            If `True`, initialize the super class.
+
+        """
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
+        ref = 2**(blk_len+5)
+        if seq_len < ref:
+            msg = "Sequence length must be at least {} bits.".format(ref)
+            raise InvalidSettingError(msg)
+        self.__blk_len = blk_len
+    
+    def func(self, bits) -> tuple:
+        """Evaluate the frequency of all possible overlapping m-bit patterns.
+
+        Parameters
+        ----------
+        bits : `1d-ndarray int8`
+            Binary sequence to be tested.
+        
+        Returns
+        -------
+        p_value : `float`
+            Test result.
+        chi_square : `float`
+            Computed statistic.
+        apen : `float`
+            Approximate entropy.
+        
+        """
+        apen = (self.__phi_m(bits, self.__blk_len)
+            - self.__phi_m(bits, self.__blk_len+1))
+        chi_square = 2*bits.size*(log(2) - apen)
+        p_value = gammaincc(2**(self.__blk_len-1), chi_square/2.0)
+        return p_value, chi_square, apen
+    
+    def report(self, results: list) -> str:
+        """Generate a CSV string from the partial test results.
+
+        Parameters
+        ----------
+        results : `list`
+            List of test results (List of returns of `func` method).
+        
+        Returns
+        -------
+        msg : `str`
+            Generated report.
+        
+        """
+        msg = ApproximateEntropyTest.NAME + "\n"
+        msg += "\nBlock length,{}\n".format(self.__blk_len)
+        msg += "\nSequenceID,p-value,chi_square,Approximate entropy\n"
+        for i, j in enumerate(results):
+            msg += "{},{},{},{}".format(i, j[0], j[1], j[2])
+            if len(j) > 3:
+                msg += ",{}".format(j[3])
+            msg += "\n"
+        return msg
+    
+    def __phi_m(self, x, m):
+        """Compute statistics."""
+        p, k = np.zeros(2**(m+1)-1), np.ones(x.size, dtype=int)
+        j = np.arange(x.size)
+        for i in range(m):
+            k *= 2
+            k[x[(i+j) % x.size] == 1] += 1
+        uniq, counts = np.unique(k, return_counts=True)
+        p[uniq-1] = 1*counts
+        ref = p[2**m-1 : 2**(m+1)-1]
+        ref = ref[np.nonzero(ref)[0]]
+        s = np.sum(ref*np.log(ref/x.size)) / x.size
         return s
