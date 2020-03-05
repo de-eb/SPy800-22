@@ -30,6 +30,7 @@ class STS:
     """
 
     class TestID(IntEnum):
+        """Test identifier."""
         FREQUENCY = auto()
         BLOCKFREQUENCY = auto()
         RUNS = auto()
@@ -47,6 +48,7 @@ class STS:
         EXCURSIONSVAR = auto()
 
     class ReadAs(Enum):
+        """Bits read mode specifier."""
         ASCII = auto()
         BYTE = auto()
         BIGENDIAN = auto()
