@@ -21,12 +21,12 @@ Notes
 """
 
 import os
-from math import sqrt, log, log2, exp, erfc
+from math import sqrt, log, log2, exp
 import numpy as np
 import cv2
 from scipy.fftpack import fft
 from scipy.stats import norm
-from scipy.special import gammaincc, loggamma
+from scipy.special import erfc, gammaincc, loggamma
 from spy800_22.sts import STS, InvalidSettingError, StatisticalError
 
 
@@ -1495,7 +1495,7 @@ class RandomExcursionsTest(STS):
         self.__pi = np.hstack((self.__pi, np.fliplr(self.__pi)))
         self.__stat = np.array([-4, -3, -2, -1, 1, 2, 3, 4])
         self.__up_lim = max(1000, seq_len/100)
-        self.__low_lim = max(0.005*seq_len**0.5, 500)
+        self.__low_lim = max(500, 0.005*sqrt(seq_len))
 
     def func(self, bits) -> tuple:
         """Evaluate the number of cycles having K visits in a random walk.
@@ -1559,6 +1559,112 @@ class RandomExcursionsTest(STS):
         msg += "SequenceID,Number of cycles"
         for i in range(self.__stat.size):
             msg += ",p-value,chi_square"
+        msg += "\n"
+        for i, j in enumerate(results):
+            if j[0] is None:
+                msg += "{},{}".format(i, j[3])
+                for k in range(self.__stat.size):
+                    msg += ",{},{}".format(j[1][k], j[2][k])
+                msg += "\n"
+            else:
+                msg += "{},{}\n".format(i, j[0])
+        return msg.replace('[','').replace(']','')
+
+
+class RandomExcursionsVariantTest(STS):
+    """Random Excursions Variant Test
+
+    Attributes
+    ----------
+    ID : `Enum`
+        A unique identifier for the class.
+    NAME : `str`
+        A unique test name for the class.
+    
+    """
+
+    ID = STS.TestID.EXCURSIONSVAR
+    NAME = "Random Excursions Variant Test"
+
+    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
+            ig_err: bool =False, init: bool =True) -> None:
+        """Set the test parameters.
+
+        Parameters
+        ----------
+        seq_len : `int`
+            Bit length of each split sequence.
+        seq_num : `int`
+            Number of sequences.
+            If `1` or more, the sequence is split and tested separately.
+        proc_num : `int`, optional
+            Number of processes for running tests in parallel.
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        init : `bool`, optional
+            If `True`, initialize the super class.
+        
+        """
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
+        self.__stat = np.array([-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9])
+        self.__low_lim = max(500, 0.005*sqrt(seq_len))
+
+    def func(self, bits) -> tuple:
+        """Evaluate the total number of times that
+        a particular state is visited in a random walk.
+        
+        Random walk is defined by the cumulative sum
+        of adjusted (`-1`, `+1`) digits in the sequence.
+
+        Parameters
+        ----------
+        bits : `1d-ndarray int8`
+            Binary sequence to be tested.
+        
+        Returns
+        -------
+        p_value : `1d-ndarray float`
+            Test results for each state.
+        xi : `1d-ndarray float`
+            Number of occurrences of each state in the entire random walk.
+        
+        """
+        bits = 2*bits - 1
+        s = np.pad(np.cumsum(bits), (1,1))
+        idx = np.where(s==0)[0]
+        cycle = idx.size - 1
+        # if cycle < self.__low_lim:
+        #     msg = "Number of cycles is out of expected range."
+        #     raise StatisticalError(msg)
+        xi = np.zeros_like(self.__stat)
+        for i in range(self.__stat.size):
+            xi[i] = np.count_nonzero(s==self.__stat[i])
+        p_value = erfc(
+            np.abs(xi-cycle) / np.sqrt(2*cycle*(4*np.abs(self.__stat)-2)))
+        return p_value, xi, cycle
+
+    def report(self, results: list) -> str:
+        """Generate a CSV string from the partial test results.
+
+        Parameters
+        ----------
+        results : `list`
+            List of test results (List of returns of `func` method).
+        
+        Returns
+        -------
+        msg : `str`
+            Generated report.
+        
+        """
+        msg = RandomExcursionsVariantTest.NAME + "\n"
+        msg += "\nLower limit of cycles,{}\n".format(self.__low_lim)
+        msg += "\n,State,{}\n".format(
+            np.array2string(self.__stat, separator=',,'))
+        msg += "SequenceID,Number of cycles"
+        for i in range(self.__stat.size):
+            msg += ",p-value,Total visits"
         msg += "\n"
         for i, j in enumerate(results):
             if j[0] is None:
