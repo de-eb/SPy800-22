@@ -493,6 +493,23 @@ class BinaryMatrixRankTest(STS):
                             / (self.__mat_num*self.__prob))
         p_value = exp(-chi_square/2)
         return p_value, chi_square, freq
+    
+    def __matrix_rank(self, mat):
+        """Calculate Rank by elementary row operations."""
+        i, j, k = 0, 0, 0
+        for _ in range(mat.shape[1]):
+            ref = np.nonzero(mat[j:mat.shape[1],k])[0]
+            if ref.size != 0:
+                i = ref[0] + j
+                if i != j:
+                    mat[[i,j]] = mat[[j,i]]
+                mat[np.nonzero(mat[j+1:mat.shape[0],k])[0]+j+1] ^= mat[j]
+                j += 1
+                k += 1
+            else:
+                k += 1
+        rank = np.count_nonzero(np.count_nonzero(mat, axis=1))
+        return rank
 
     def report(self, results: list) -> str:
         """Generate a CSV string from the partial test results.
@@ -522,23 +539,6 @@ class BinaryMatrixRankTest(STS):
                 msg += ",{}".format(j[3])
             msg += "\n"
         return msg.replace('[','').replace(']','')
-    
-    def __matrix_rank(self, mat):
-        """Calculate Rank by elementary row operations."""
-        i, j, k = 0, 0, 0
-        for _ in range(mat.shape[1]):
-            ref = np.nonzero(mat[j:mat.shape[1],k])[0]
-            if ref.size != 0:
-                i = ref[0] + j
-                if i != j:
-                    mat[[i,j]] = mat[[j,i]]
-                mat[np.nonzero(mat[j+1:mat.shape[0],k])[0]+j+1] ^= mat[j]
-                j += 1
-                k += 1
-            else:
-                k += 1
-        rank = np.count_nonzero(np.count_nonzero(mat, axis=1))
-        return rank
 
 
 class DiscreteFourierTransformTest(STS):
@@ -970,6 +970,13 @@ class MaurersUniversalStatisticalTest(STS):
         p_value = erfc(abs(phi-self.__exp_val) / (sqrt(2)*self.__sigma))
         return p_value, phi
     
+    def __packbits(self, x, reverse=True):
+        """Converts a binary matrix to a decimal value."""
+        p = np.power(2, np.arange(x.shape[-1]))
+        if reverse:
+            p = p[::-1]
+        return np.dot(x, p)
+    
     def report(self, results: list) -> str:
         """Generate a CSV string from the partial test results.
 
@@ -996,13 +1003,6 @@ class MaurersUniversalStatisticalTest(STS):
                 msg += ",{}".format(j[2])
             msg += "\n"
         return msg
-    
-    def __packbits(self, x, reverse=True):
-        """Converts a binary matrix to a decimal value."""
-        p = np.power(2, np.arange(x.shape[-1]))
-        if reverse:
-            p = p[::-1]
-        return np.dot(x, p)
 
 
 class LinearComplexityTest(STS):
@@ -1084,6 +1084,22 @@ class LinearComplexityTest(STS):
         p_value = gammaincc(6/2.0 , chi_square/2.0)
         return p_value, chi_square, hist
     
+    def __bma(self, bits):
+        """Berlekamp Massey Algorithm."""
+        c, b = np.zeros(bits.size, dtype=int), np.zeros(bits.size, dtype=int)
+        c[0], b[0] = 1, 1
+        l, m, i = 0, -1, 0
+        for i in range(bits.size):
+            if (bits[i] + np.dot(bits[i-l:i][::-1], c[1:1+l])) % 2 == 1:
+                t = c.copy()
+                c[np.where(b[:l]==1)[0] + i-m] += 1
+                c = c % 2
+                if l <= i>>1:
+                    l = i + 1 - l
+                    m = i
+                    b = t
+        return l
+    
     def report(self, results: list) -> str:
         """Generate a CSV string from the partial test results.
 
@@ -1111,22 +1127,6 @@ class LinearComplexityTest(STS):
                 msg += ",{}".format(j[3])
             msg += "\n"
         return msg.replace('[','').replace(']','')
-    
-    def __bma(self, bits):
-        """Berlekamp Massey Algorithm."""
-        c, b = np.zeros(bits.size, dtype=int), np.zeros(bits.size, dtype=int)
-        c[0], b[0] = 1, 1
-        l, m, i = 0, -1, 0
-        for i in range(bits.size):
-            if (bits[i] + np.dot(bits[i-l:i][::-1], c[1:1+l])) % 2 == 1:
-                t = c.copy()
-                c[np.where(b[:l]==1)[0] + i-m] += 1
-                c = c % 2
-                if l <= i>>1:
-                    l = i + 1 - l
-                    m = i
-                    b = t
-        return l
 
 
 class SerialTest(STS):
@@ -1198,6 +1198,19 @@ class SerialTest(STS):
             2**(self.__blk_len-2)/2.0, (psi[0]-2*psi[1]+psi[2])/2.0)
         return p_value, psi
     
+    def __psi_square(self, x, m):
+        """Compute statistics."""
+        p, k = np.zeros(2**(m+1)-1), np.ones(x.size, dtype=int)
+        j = np.arange(x.size)
+        for i in range(m):
+            ref = x[(i+j) % x.size]
+            k[ref==0] *= 2
+            k[ref==1] = 2*k[ref==1] + 1
+        uniq, counts = np.unique(k, return_counts=True)
+        p[uniq-1] = 1*counts
+        s = np.sum(p[2**m-1 : 2**(m+1)-1]**2) * 2**m/x.size - x.size
+        return s
+    
     def report(self, results: list) -> str:
         """Generate a CSV string from the partial test results.
 
@@ -1222,19 +1235,6 @@ class SerialTest(STS):
                 msg += ",{}".format(j[2])
             msg += "\n"
         return msg.replace('[','').replace(']','')
-    
-    def __psi_square(self, x, m):
-        """Compute statistics."""
-        p, k = np.zeros(2**(m+1)-1), np.ones(x.size, dtype=int)
-        j = np.arange(x.size)
-        for i in range(m):
-            ref = x[(i+j) % x.size]
-            k[ref==0] *= 2
-            k[ref==1] = 2*k[ref==1] + 1
-        uniq, counts = np.unique(k, return_counts=True)
-        p[uniq-1] = 1*counts
-        s = np.sum(p[2**m-1 : 2**(m+1)-1]**2) * 2**m/x.size - x.size
-        return s
 
 
 class ApproximateEntropyTest(STS):
@@ -1305,6 +1305,20 @@ class ApproximateEntropyTest(STS):
         p_value = gammaincc(2**(self.__blk_len-1), chi_square/2.0)
         return p_value, chi_square, apen
     
+    def __phi_m(self, x, m):
+        """Compute statistics."""
+        p, k = np.zeros(2**(m+1)-1), np.ones(x.size, dtype=int)
+        j = np.arange(x.size)
+        for i in range(m):
+            k *= 2
+            k[x[(i+j) % x.size] == 1] += 1
+        uniq, counts = np.unique(k, return_counts=True)
+        p[uniq-1] = 1*counts
+        ref = p[2**m-1 : 2**(m+1)-1]
+        ref = ref[np.nonzero(ref)[0]]
+        s = np.sum(ref*np.log(ref/x.size)) / x.size
+        return s
+    
     def report(self, results: list) -> str:
         """Generate a CSV string from the partial test results.
 
@@ -1328,17 +1342,3 @@ class ApproximateEntropyTest(STS):
                 msg += ",{}".format(j[3])
             msg += "\n"
         return msg
-    
-    def __phi_m(self, x, m):
-        """Compute statistics."""
-        p, k = np.zeros(2**(m+1)-1), np.ones(x.size, dtype=int)
-        j = np.arange(x.size)
-        for i in range(m):
-            k *= 2
-            k[x[(i+j) % x.size] == 1] += 1
-        uniq, counts = np.unique(k, return_counts=True)
-        p[uniq-1] = 1*counts
-        ref = p[2**m-1 : 2**(m+1)-1]
-        ref = ref[np.nonzero(ref)[0]]
-        s = np.sum(ref*np.log(ref/x.size)) / x.size
-        return s
