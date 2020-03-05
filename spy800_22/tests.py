@@ -16,7 +16,7 @@ https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software
 Notes
 -----
     Test results may differ from those of the NIST's official implementation.
-    This is due to all array operations being optimized for Numpy.
+    This is due to all array operations being optimized for Python.
 
 """
 
@@ -71,7 +71,7 @@ class FrequencyTest(STS):
 
         Parameters
         ----------
-        bits : `1d-ndarray uint8`
+        bits : `1d-ndarray int8`
             Binary sequence to be tested.
         
         Returns
@@ -149,31 +149,21 @@ class BlockFrequencyTest(STS):
             If `True`, initialize the super class.
 
         """
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
         if seq_len < blk_len:
             msg = ("Sequence length must be at least {} bits."
                 .format(blk_len))
             raise InvalidSettingError(msg)
-        if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
         self.__blk_len = blk_len
         self.__blk_num = seq_len // blk_len
-    
-    @property
-    def blk_len(self):
-        """`int`: Bit length of each block."""
-        return self.__blk_len
-    
-    @property
-    def blk_num(self):
-        """`int`: Number of blocks."""
-        return self.__blk_num
     
     def func(self, bits) -> tuple:
         """Evaluate the proportion of 1s for each M-bit subsequence.
 
         Parameters
         ----------
-        bits : `1d-ndarray uint8`
+        bits : `1d-ndarray int8`
             Binary sequence to be tested.
         
         Returns
@@ -259,7 +249,7 @@ class RunsTest(STS):
 
         Parameters
         ----------
-        bits : `1d-ndarray uint8`
+        bits : `1d-ndarray int8`
             Binary sequence to be tested.
         
         Returns
@@ -339,11 +329,11 @@ class LongestRunOfOnesTest(STS):
             If `True`, initialize the super class.
 
         """
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
         if seq_len < 128:
             msg = "Sequence length must be at least 128 bits."
             raise InvalidSettingError(msg)
-        if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
         if seq_len < 6272:
             self.__blk_len = 8
             self.__v = np.arange(1, 5)
@@ -359,16 +349,6 @@ class LongestRunOfOnesTest(STS):
             self.__pi = np.array(
                 [0.0882, 0.2092, 0.2483, 0.1933, 0.1208, 0.0675, 0.0727])
         self.__blk_num = seq_len // self.__blk_len
-    
-    @property
-    def blk_len(self):
-        """`int`: Bit length of each block."""
-        return self.__blk_len
-    
-    @property
-    def blk_num(self):
-        """`int`: Number of blocks."""
-        return self.__blk_num
         
     def func(self, bits) -> tuple:
         """Evaluate the longest "Run" of 1s for each M-bit subsequence,
@@ -376,7 +356,7 @@ class LongestRunOfOnesTest(STS):
 
         Parameters
         ----------
-        bits : `1d-ndarray uint8`
+        bits : `1d-ndarray int8`
             Binary sequence to be tested.
         
         Returns
@@ -467,14 +447,14 @@ class BinaryMatrixRankTest(STS):
             If `True`, initialize the super class.
 
         """
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
         self.__m, self.__q = 32, 32
         self.__mat_num = seq_len // (self.__m * self.__q)
         if self.__mat_num == 0:
             msg = ("Sequence length must be at least {} bits."
                 .format(self.__m * self.__q))
             raise InvalidSettingError(msg)
-        if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
         self.__prob = np.zeros(3)
         for i, r in enumerate([self.__m, self.__m-1]):
             j = np.arange(r, dtype=float)
@@ -483,23 +463,13 @@ class BinaryMatrixRankTest(STS):
             self.__prob[i] = (
                 2**(r*(self.__m + self.__q - r) - self.__m*self.__q) * prod)
         self.__prob[2] = 1 - (self.__prob[0] + self.__prob[1])
-    
-    @property
-    def mat_shape(self):
-        """`tuple`: Matrix shape used for Rank calculation."""
-        return self.__m, self.__q
-    
-    @property
-    def mat_num(self):
-        """`int`: Number of matrices."""
-        return self.__mat_num
         
     def func(self, bits) -> tuple:
         """Evaluate the Rank of disjoint sub-matrices of the entire sequence.
 
         Parameters
         ----------
-        bits : `1d-ndarray uint8`
+        bits : `1d-ndarray int8`
             Binary sequence to be tested.
         
         Returns
@@ -631,7 +601,7 @@ class DiscreteFourierTransformTest(STS):
 
         Parameters
         ----------
-        bits : `1d-ndarray uint8`
+        bits : `1d-ndarray int8`
             Binary sequence to be tested.
         
         Returns
@@ -733,18 +703,13 @@ class NonOverlappingTemplateMatchingTest(STS):
         self.__var = self.__blk_len*(1/2**tpl_len - (2*tpl_len-1)/2**(2*tpl_len))
         self.__tpl = np.load(tpl_path)
     
-    @property
-    def tpl(self):
-        """`ndarrat uint8`: Templates."""
-        return self.__tpl
-    
     def func(self, bits) -> tuple:
         """Evaluates the number of occurrences of templates 
         (unique m-bit patterns) for each M-bit subsequence.
 
         Parameters
         ----------
-        bits : `1d-ndarray uint8`
+        bits : `1d-ndarray int8`
             Binary sequence to be tested.
         
         Returns
@@ -870,18 +835,13 @@ class OverlappingTemplateMatchingTest(STS):
         self.__pi[self.__k] = 1 - np.sum(self.__pi)
         self.__tpl = np.ones((1,tpl_len), dtype='uint8')
     
-    @property
-    def tpl(self):
-        """`ndarrat uint8`: Templates."""
-        return self.__tpl
-    
     def func(self, bits) -> tuple:
         """Evaluates the number of occurrences of a template 
         (duplicate m-bit pattern) for each M-bit subsequence.
 
         Parameters
         ----------
-        bits : `1d-ndarray uint8`
+        bits : `1d-ndarray int8`
             Binary sequence to be tested.
         
         Returns
@@ -939,3 +899,141 @@ class OverlappingTemplateMatchingTest(STS):
                 msg += ",{}".format(j[3])
             msg += "\n"
         return msg
+
+
+class MaurersUniversalStatisticalTest(STS):
+    """Maurer's "Universal Statistical" Test
+
+    Attributes
+    ----------
+    ID : `Enum`
+        A unique identifier for the class.
+    NAME : `str`
+        A unique test name for the class.
+    
+    """
+
+    ID = STS.TestID.UNIVERSAL
+    NAME = "Maurer's \"Universal Statistical\" Test"
+
+    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
+            ig_err: bool =False, init: bool =True) -> None:
+        """Set the test parameters.
+
+        Parameters
+        ----------
+        seq_len : `int`
+            Bit length of each split sequence.
+        seq_num : `int`
+            Number of sequences.
+            If `1` or more, the sequence is split and tested separately.
+        proc_num : `int`, optional
+            Number of processes for running tests in parallel.
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        init : `bool`, optional
+            If `True`, initialize the super class.
+
+        """
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
+        self.__blk_len = 5
+        th = [387840, 904960, 2068480, 4654080, 10342400, 22753280,
+              49643520, 107560960, 231669760, 496435200, 1059061760]
+        for i in th:
+            if seq_len >= i:
+                self.__blk_len += 1
+        if self.__blk_len < 6:
+            msg = "Sequence length must be at least {} bits.".format(th[0])
+            raise InvalidSettingError(msg)
+        var = [0, 0, 0, 0, 0, 0, 2.954, 3.125, 3.238, 3.311,
+               3.356, 3.384, 3.401, 3.410, 3.416, 3.419, 3.421]
+        exp_val = [0, 0, 0, 0, 0, 0, 5.2177052, 6.1962507, 7.1836656,
+                   8.1764248, 9.1723243, 10.170032, 11.168765,
+                   12.168070, 13.167693, 14.167488, 15.167379]
+        self.__var = var[self.__blk_len]
+        self.__exp_val = exp_val[self.__blk_len]
+        self.__q = 10 * 2**self.__blk_len
+        self.__k = seq_len // self.__blk_len - self.__q
+        self.__sigma = (
+            (0.7 - 0.8/self.__blk_len + (4+32/self.__blk_len)/15
+            * self.__k**(-3/self.__blk_len)) * sqrt(self.__var/self.__k))
+    
+    def func(self, bits) -> tuple:
+        """Evaluate the distance between L-bit patterns repeatedly observed.
+
+        Parameters
+        ----------
+        bits : `1d-ndarray int8`
+            Binary sequence to be tested.
+        
+        Returns
+        -------
+        p_value : `float`
+            Test result.
+        phi : `float`
+            Computed statistic.
+        
+        """
+        t = np.zeros(2**self.__blk_len)
+        blk = self.__packbits(
+            np.resize(bits, (self.__k+self.__q, self.__blk_len)))
+        uniq, idx = np.unique(blk[:self.__q][::-1], return_index=True)
+        t[uniq] = idx
+        s = 0
+        for i in range(t.size):
+            s += np.sum(np.log2(np.diff(
+                np.append(-t[i], np.where(blk[self.__q:]==i)))))
+        phi = s / self.__k
+        p_value = erfc(abs(phi-self.__exp_val) / (sqrt(2)*self.__sigma))
+        return p_value, phi
+    
+    def report(self, results: list) -> str:
+        """Generate a CSV string from the partial test results.
+
+        Parameters
+        ----------
+        results : `list`
+            List of test results (List of returns of `func` method).
+        
+        Returns
+        -------
+        msg : `str`
+            Generated report.
+        
+        """
+        msg = MaurersUniversalStatisticalTest.NAME + "\n"
+        msg += "\nBlock length,{}\n".format(self.__blk_len)
+        msg += "Theoretical variance,{}\n".format(self.__var)
+        msg += "Theoretical expected value,{}\n".format(self.__exp_val)
+        msg += "Theoretical standard deviation,{}\n".format(self.__sigma)
+        msg += "\nSequenceID,p-value,pi\n"
+        for i, j in enumerate(results):
+            msg += "{},{},{}".format(i, j[0], j[1])
+            if len(j) > 2:
+                msg += ",{}".format(j[2])
+            msg += "\n"
+        return msg
+    
+    def __packbits(self, x, reverse=True):
+        """Converts a binary matrix to a decimal value.
+
+        Binary matrix is packed row by row.
+
+        Parameters
+        ----------
+        x : `2d-ndarray int`
+            Binary matrix to be converted.
+        reverse : `bool`
+            Conversion mode. If `True`, little endian, otherwise big endian.
+        
+        Returns
+        -------
+        packed : `1d-ndarray int`
+            Matrix of decimal values.
+        
+        """
+        p = np.power(2, np.arange(x.shape[-1]))
+        if reverse:
+            p = p[::-1]
+        return np.dot(x, p)

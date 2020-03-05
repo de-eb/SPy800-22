@@ -124,7 +124,7 @@ class STS:
         """`list`: Test results."""
         return self.__results
 
-    def read_bits(self, file_path: str, fmt: Enum) -> None:
+    def load_bits(self, file_path: str, fmt: Enum) -> None:
         """Read data from a file and convert it to a binary sequence.
 
         Parameters
@@ -144,6 +144,7 @@ class STS:
         if not os.path.isfile(file_path):
             msg = "File \"{}\" is not found.".format(file_path)
             raise InvalidSettingError(msg)
+        print("\nLoading bits.", end="")
         self.__sequence = np.zeros(
             self.__sequence_len*self.__sequence_num, dtype='int8')
 
@@ -169,6 +170,7 @@ class STS:
         self.__sequence = np.resize(
             self.__sequence, (self.__sequence_num, self.__sequence_len))
         self.__is_ready = True
+        print("\r{} bits loaded.".format(self.__sequence.size))
     
     def run(self) -> None:
         """Run the test.
