@@ -25,6 +25,7 @@ from math import sqrt, log, log2, exp, erfc
 import numpy as np
 import cv2
 from scipy.fftpack import fft
+from scipy.stats import norm
 from scipy.special import gammaincc, loggamma
 from spy800_22.sts import STS, InvalidSettingError, StatisticalError
 
@@ -244,8 +245,9 @@ class RunsTest(STS):
             super().__init__(seq_len, seq_num, proc_num, ig_err)
         
     def func(self, bits) -> tuple:
-        """Evaluate the total number of "Run"s for the entire sequence,
-        where a "Run" is a continuation of the same bit.
+        """Evaluate the total number of "Run"s for the entire sequence.
+        
+        "Run" is a continuation of the same bit.
 
         Parameters
         ----------
@@ -351,8 +353,9 @@ class LongestRunOfOnesTest(STS):
         self.__blk_num = seq_len // self.__blk_len
         
     def func(self, bits) -> tuple:
-        """Evaluate the longest "Run" of 1s for each M-bit subsequence,
-        where a "Run" is a continuation of the same bit.
+        """Evaluate the longest "Run" of 1s for each M-bit subsequence.
+        
+        "Run" is a continuation of the same bit.
 
         Parameters
         ----------
@@ -1340,5 +1343,106 @@ class ApproximateEntropyTest(STS):
             msg += "{},{},{},{}".format(i, j[0], j[1], j[2])
             if len(j) > 3:
                 msg += ",{}".format(j[3])
+            msg += "\n"
+        return msg
+
+
+class CumulativeSumsTest(STS):
+    """Cumulative Sums (Cusum) Test
+
+    Attributes
+    ----------
+    ID : `Enum`
+        A unique identifier for the class.
+    NAME : `str`
+        A unique test name for the class.
+    
+    """
+
+    ID = STS.TestID.CUSUM
+    NAME = "Cumulative Sums (Cusum) Test"
+
+    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
+            ig_err: bool =False, init: bool =True) -> None:
+        """Set the test parameters.
+
+        Parameters
+        ----------
+        seq_len : `int`
+            Bit length of each split sequence.
+        seq_num : `int`
+            Number of sequences.
+            If `1` or more, the sequence is split and tested separately.
+        proc_num : `int`, optional
+            Number of processes for running tests in parallel.
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        init : `bool`, optional
+            If `True`, initialize the super class.
+        
+        """
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
+
+    def func(self, bits) -> tuple:
+        """Evaluate the maximal excursion (from `0`) of the random walk.
+        
+        Random walk is defined by the cumulative sum
+        of adjusted (`-1`, `+1`) digits in the sequence.
+
+        Parameters
+        ----------
+        bits : `1d-ndarray int8`
+            Binary sequence to be tested.
+        
+        Returns
+        -------
+        p_value : `1d-ndarray float`
+            Test results for forward and backward random walk.
+        sums : `1d-ndarray int`
+            The largest absolute values of partial sums.
+        
+        """
+        p_value = np.zeros(2)
+        sums = np.zeros(2, dtype=int)
+        bits = 2*bits - 1
+        sums[0] = np.max(np.abs(np.cumsum(bits)))
+        p_value[0] = (1 - self.__sigma(bits.size, sums[0])
+                        + self.__sigma(bits.size, sums[0], term=True))
+        sums[1] = np.max(np.abs(np.cumsum(bits[::-1])))
+        p_value[1] = (1 - self.__sigma(bits.size, sums[1])
+                        + self.__sigma(bits.size, sums[1], term=True))
+        return p_value, sums
+    
+    def __sigma(self, n, z, term=False):
+        a, b, c = 1, 1, -1
+        if term:
+            a, b, c = -3, 3, 1
+        k = np.arange(int((-n/z+a)//4), int((n/z-1)//4)+1)
+        s = np.sum(norm.cdf((4*k+b)*z/sqrt(n)) - norm.cdf((4*k+c)*z/sqrt(n)))
+        return s
+
+    def report(self, results: list) -> str:
+        """Generate a CSV string from the partial test results.
+
+        Parameters
+        ----------
+        results : `list`
+            List of test results (List of returns of `func` method).
+        
+        Returns
+        -------
+        msg : `str`
+            Generated report.
+        
+        """
+        msg = CumulativeSumsTest.NAME + "\n"
+        msg += "\n,Forward,,Reverse\n"
+        msg += "SequenceID,p-value,maximum partial sum"
+        msg += ",p-value,maximum partial sum\n"
+        for i, j in enumerate(results):
+            msg += "{},{},{},{},{}".format(i,j[0][0],j[1][0],j[0][1],j[1][1])
+            if len(j) > 2:
+                msg += ",{}".format(j[2])
             msg += "\n"
         return msg
