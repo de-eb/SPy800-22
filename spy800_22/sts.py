@@ -13,7 +13,6 @@ https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software
 
 """
 
-import traceback
 import os
 from datetime import datetime
 from enum import Enum, IntEnum, auto
@@ -211,11 +210,11 @@ class STS:
         try:
             res = test.func(self.__sequence[seq_id])
         except StatisticalError as err:
-            result[2] = err
+            result[2] = "StatisticalError"
             if not self.__ig_err:
                 raise
         except ZeroDivisionError as err:
-            result[2] = err
+            result[2] = "ZeroDivisionError"
             if not self.__ig_err:
                 raise
         else:

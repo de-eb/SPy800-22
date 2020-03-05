@@ -107,10 +107,10 @@ class FrequencyTest(STS):
         msg = FrequencyTest.NAME + "\n"
         msg += "\nSequenceID,p-value,zeros count,ones count\n"
         for i, j in enumerate(results):
-            msg += "{},{},{},{}".format(i, j[0], j[1], j[2])
-            if len(j) > 3:
-                msg += ",{}".format(j[3])
-            msg += "\n"
+            if j[0] is None:
+                msg += "{},{},{},{}\n".format(i, j[1], j[2], j[3])
+            else:
+                msg += "{},{}\n".format(i, j[0])
         return msg
 
 
@@ -200,10 +200,10 @@ class BlockFrequencyTest(STS):
         msg += "Number of blocks,{}\n".format(self.__blk_num)
         msg += "\nSequenceID,p-value,chi_square\n"
         for i, j in enumerate(results):
-            msg += "{},{},{}".format(i, j[0], j[1])
-            if len(j) > 2:
-                msg += ",{}".format(j[2])
-            msg += "\n"
+            if j[0] is None:
+                msg += "{},{},{}\n".format(i, j[1], j[2])
+            else:
+                msg += "{},{}\n".format(i, j[0])
         return msg
 
 
@@ -267,7 +267,7 @@ class RunsTest(STS):
         pi = np.count_nonzero(bits) / bits.size
         if abs(pi-0.5) > 2/sqrt(bits.size):
             msg = "Estimator criteria not met. (Pi = {})".format(pi)
-            raise StatisticalError(msg, 0.0, pi, None)
+            raise StatisticalError(msg)
         run = np.count_nonzero(np.diff(bits))
         p_value = erfc(
             abs(run-2*bits.size*pi*(1-pi)) / (2*pi*(1-pi)*sqrt(2*bits.size)))
@@ -290,10 +290,10 @@ class RunsTest(STS):
         msg = RunsTest.NAME + "\n"
         msg += "\nSequenceID,p-value,pi,Runs total\n"
         for i, j in enumerate(results):
-            msg += "{},{},{},{}".format(i, j[0], j[1], j[2])
-            if len(j) > 3:
-                msg += ",{}".format(j[3])
-            msg += "\n"
+            if j[0] is None:
+                msg += "{},{},{},{}\n".format(i, j[1], j[2], j[3])
+            else:
+                msg += "{},{}\n".format(i, j[0])
         return msg
 
 
@@ -406,11 +406,11 @@ class LongestRunOfOnesTest(STS):
         msg += "\nSequenceID,p-value,chi_square,Histogram of longest Run\n"
         msg += (",,,<={}<=\n".format(np.array2string(self.__v, separator=',')))
         for i, j in enumerate(results):
-            msg += "{},{},{},{}".format(i, j[0], j[1],
-                np.array2string(j[2], separator=','))
-            if len(j) > 3:
-                msg += ",{}".format(j[3])
-            msg += "\n"
+            if j[0] is None:
+                msg += "{},{},{},{}\n".format(i, j[1], j[2],
+                    np.array2string(j[3], separator=','))
+            else:
+                msg += "{},{}\n".format(i, j[0])
         return msg.replace('[','').replace(']','')
 
 
@@ -536,11 +536,11 @@ class BinaryMatrixRankTest(STS):
         msg += "SequenceID,p-value,chi_square,Histogram of Rank\n"
         msg += ",,,{},{},other\n".format(self.__m, self.__m-1)
         for i, j in enumerate(results):
-            msg += "{},{},{},{}".format(i, j[0], j[1],
-                np.array2string(j[2], separator=','))
-            if len(j) > 3:
-                msg += ",{}".format(j[3])
-            msg += "\n"
+            if j[0] is None:
+                msg += "{},{},{},{}\n".format(i, j[1], j[2],
+                    np.array2string(j[3], separator=','))
+            else:
+                msg += "{},{}\n".format(i, j[0])
         return msg.replace('[','').replace(']','')
 
 
@@ -628,10 +628,10 @@ class DiscreteFourierTransformTest(STS):
         msg += "Reference number of peak,{}\n".format(self.__ref)
         msg += "\nSequenceID,p-value,percentage,peaks below threshold\n"
         for i, j in enumerate(results):
-            msg += "{},{},{},{}".format(i, j[0], j[1], j[2])
-            if len(j) > 3:
-                msg += ",{}".format(j[3])
-            msg += "\n"
+            if j[0] is None:
+                msg += "{},{},{},{}\n".format(i, j[1], j[2], j[3])
+            else:
+                msg += "{},{}\n".format(i, j[0])
         return msg
 
 
@@ -752,12 +752,11 @@ class NonOverlappingTemplateMatchingTest(STS):
         msg += "\n"
         for i, j in enumerate(results):
             for k in range(self.__tpl.shape[0]):
-                msg += "{},{},{},{},".format(i, j[0][k], j[1][k],
-                    np.array2string(j[2][k], separator=','))
-                if len(j) > 3:
-                    msg += "{},".format(j[3][k])
+                if j[0] is None:
+                    msg += "{},{},{},{},,".format(i, j[1][k], j[2][k],
+                        np.array2string(j[3][k], separator=','))
                 else:
-                    msg += ","
+                    msg += "{},{},,,,".format(i, j[0])
             msg += "\n"
         return msg.replace('[','').replace(']','')
 
@@ -878,11 +877,11 @@ class OverlappingTemplateMatchingTest(STS):
         msg += ",,,{}<=\n".format(
             np.array2string(np.arange(self.__k+1), separator=','))
         for i, j in enumerate(results):
-            msg += "{},{},{},{}".format(i, j[0], j[1],
-                np.array2string(j[2], separator=','))
-            if len(j) > 3:
-                msg += ",{}".format(j[3])
-            msg += "\n"
+            if j[0] is None:
+                msg += "{},{},{},{}\n".format(i, j[1], j[2],
+                    np.array2string(j[3], separator=','))
+            else:
+                msg += "{},{}\n".format(i, j[0])
         return msg.replace('[','').replace(']','')
 
 
@@ -1001,10 +1000,10 @@ class MaurersUniversalStatisticalTest(STS):
         msg += "Theoretical standard deviation,{}\n".format(self.__sigma)
         msg += "\nSequenceID,p-value,pi\n"
         for i, j in enumerate(results):
-            msg += "{},{},{}".format(i, j[0], j[1])
-            if len(j) > 2:
-                msg += ",{}".format(j[2])
-            msg += "\n"
+            if j[0] is None:
+                msg += "{},{},{}\n".format(i, j[1], j[2])
+            else:
+                msg += "{},{}\n".format(i, j[0])
         return msg
 
 
@@ -1124,11 +1123,11 @@ class LinearComplexityTest(STS):
         msg += "\nSequenceID,p-value,chi_square,Histogram of T\n"
         msg += ",,,C0,C1,C2,C3,C4,C5,C6\n"
         for i, j in enumerate(results):
-            msg += "{},{},{},{}".format(i, j[0], j[1],
-                np.array2string(j[2], separator=','))
-            if len(j) > 3:
-                msg += ",{}".format(j[3])
-            msg += "\n"
+            if j[0] is None:
+                msg += "{},{},{},{}\n".format(i, j[1], j[2],
+                    np.array2string(j[3], separator=','))
+            else:
+                msg += "{},{}\n".format(i, j[0])
         return msg.replace('[','').replace(']','')
 
 
@@ -1232,11 +1231,12 @@ class SerialTest(STS):
         msg += "\nBlock length,{}\n".format(self.__blk_len)
         msg += "\nSequenceID,p-value1,p-value2,psi_m,psi_m-1,psi_m-2\n"
         for i, j in enumerate(results):
-            msg += "{},{},{}".format(i, np.array2string(j[0], separator=','),
-                np.array2string(j[1], separator=','))
-            if len(j) > 2:
-                msg += ",{}".format(j[2])
-            msg += "\n"
+            if j[0] is None:
+                msg += "{},{},{}\n".format(i, 
+                    np.array2string(j[1], separator=','),
+                    np.array2string(j[2], separator=','))
+            else:
+                msg += "{},{}\n".format(i, j[0])
         return msg.replace('[','').replace(']','')
 
 
@@ -1340,10 +1340,10 @@ class ApproximateEntropyTest(STS):
         msg += "\nBlock length,{}\n".format(self.__blk_len)
         msg += "\nSequenceID,p-value,chi_square,Approximate entropy\n"
         for i, j in enumerate(results):
-            msg += "{},{},{},{}".format(i, j[0], j[1], j[2])
-            if len(j) > 3:
-                msg += ",{}".format(j[3])
-            msg += "\n"
+            if j[0] is None:
+                msg += "{},{},{},{}\n".format(i, j[1], j[2], j[3])
+            else:
+                msg += "{},{}\n".format(i, j[0])
         return msg
 
 
@@ -1441,8 +1441,131 @@ class CumulativeSumsTest(STS):
         msg += "SequenceID,p-value,maximum partial sum"
         msg += ",p-value,maximum partial sum\n"
         for i, j in enumerate(results):
-            msg += "{},{},{},{},{}".format(i,j[0][0],j[1][0],j[0][1],j[1][1])
-            if len(j) > 2:
-                msg += ",{}".format(j[2])
-            msg += "\n"
+            if j[0] is None:
+                msg += "{},{},{},{},{}\n".format(
+                    i, j[1][0], j[2][0], j[1][1], j[2][1])
+            else:
+                msg += "{},{}\n".format(i, j[0])
         return msg
+
+
+class RandomExcursionsTest(STS):
+    """Random Excursions Test
+
+    Attributes
+    ----------
+    ID : `Enum`
+        A unique identifier for the class.
+    NAME : `str`
+        A unique test name for the class.
+    
+    """
+
+    ID = STS.TestID.EXCURSIONS
+    NAME = "Random Excursions Test"
+
+    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
+            ig_err: bool =False, init: bool =True) -> None:
+        """Set the test parameters.
+
+        Parameters
+        ----------
+        seq_len : `int`
+            Bit length of each split sequence.
+        seq_num : `int`
+            Number of sequences.
+            If `1` or more, the sequence is split and tested separately.
+        proc_num : `int`, optional
+            Number of processes for running tests in parallel.
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        init : `bool`, optional
+            If `True`, initialize the super class.
+        
+        """
+        if init:
+            super().__init__(seq_len, seq_num, proc_num, ig_err)
+        self.__pi = np.array(
+            [[0.8750000000,  0.8333333333,  0.7500000000,  0.5000000000],
+            [0.01562500000, 0.02777777778, 0.06250000000, 0.25000000000],
+            [0.01367187500, 0.02314814815, 0.04687500000, 0.12500000000],
+            [0.01196289063, 0.01929012346, 0.03515625000, 0.06250000000],
+            [0.01046752930, 0.01607510288, 0.02636718750, 0.03125000000],
+            [0.0732727051,  0.0803755143,  0.0791015625,  0.0312500000]])
+        self.__pi = np.hstack((self.__pi, np.fliplr(self.__pi)))
+        self.__stat = np.array([-4, -3, -2, -1, 1, 2, 3, 4])
+        self.__up_lim = max(1000, seq_len/100)
+        self.__low_lim = max(0.005*seq_len**0.5, 500)
+
+    def func(self, bits) -> tuple:
+        """Evaluate the number of cycles having K visits in a random walk.
+        
+        Random walk is defined by the cumulative sum
+        of adjusted (`-1`, `+1`) digits in the sequence.
+
+        Parameters
+        ----------
+        bits : `1d-ndarray int8`
+            Binary sequence to be tested.
+        
+        Returns
+        -------
+        p_value : `1d-ndarray float`
+            Test results for each state.
+        chi_square : `1d-ndarray float`
+            Computed statistics for each state.
+        cycle : `int`
+            Number of cycles.
+        
+        """
+        bits = 2*bits - 1
+        s = np.pad(np.cumsum(bits), (1,1))
+        idx = np.where(s==0)[0]
+        cycle = idx.size - 1
+        # if cycle > self.__up_lim or cycle < self.__low_lim:
+        #     msg = "Number of cycles is out of expected range."
+        #     raise StatisticalError(msg)
+        hist = np.zeros((cycle, self.__stat.size), dtype=int)
+        freq = np.zeros((6, self.__stat.size), dtype=int)
+        for i in range(cycle):
+            hist[i] = np.histogram(
+                s[idx[i]:idx[i+1]], bins=9, range=(-4,5))[0][self.__stat+4]
+        for i in range(6):
+            freq[i] = np.count_nonzero(hist==i, axis=0)
+        freq[i] = np.count_nonzero(hist>i, axis=0)
+        chi_square = np.sum((freq-cycle*self.__pi)**2/(cycle*self.__pi),axis=0)
+        p_value = gammaincc(2.5 , chi_square/2.0)
+        return p_value, chi_square, cycle
+
+    def report(self, results: list) -> str:
+        """Generate a CSV string from the partial test results.
+
+        Parameters
+        ----------
+        results : `list`
+            List of test results (List of returns of `func` method).
+        
+        Returns
+        -------
+        msg : `str`
+            Generated report.
+        
+        """
+        msg = RandomExcursionsTest.NAME + "\n"
+        msg += "\nUpper limit of cycles,{}\n".format(self.__up_lim)
+        msg += "Lower limit of cycles,{}\n".format(self.__low_lim)
+        msg += "\n,State,{}\n".format(
+            np.array2string(self.__stat, separator=',,'))
+        msg += "SequenceID,Number of cycles"
+        for i in range(self.__stat.size):
+            msg += ",p-value,chi_square"
+        msg += "\n"
+        for i, j in enumerate(results):
+            if j[0] is None:
+                msg += "{},{}".format(i, j[3])
+                for k in range(self.__stat.size):
+                    msg += ",{},{}".format(j[1][k], j[2][k])
+                msg += "\n"
+            else:
+                msg += "{},{}\n".format(i, j[0])
+        return msg.replace('[','').replace(']','')
