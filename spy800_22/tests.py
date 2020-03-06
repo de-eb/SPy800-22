@@ -711,7 +711,7 @@ class NonOverlappingTemplateMatchingTest(STS):
         """
         bits = np.resize(
             bits, (self.__blk_num, self.__blk_len)).astype('uint8')
-        match = np.zeros((self.__tpl.shape[0], self.__blk_num), dtype='uint8')
+        match = np.zeros((self.__tpl.shape[0], self.__blk_num), dtype=int)
         for i in range(self.__tpl.shape[0]):
             res = cv2.matchTemplate(
                 bits, self.__tpl[i].reshape((1,-1)), cv2.TM_SQDIFF)
@@ -739,11 +739,11 @@ class NonOverlappingTemplateMatchingTest(STS):
         msg += "Block length,{}\n".format(self.__blk_len)
         msg += "Number of blocks,{}\n".format(self.__blk_num)
         msg += "Lambda (theoretical mean of matches),{}\n".format(self.__mean)
-
+        msg += "\n"
         for i in range(self.__tpl.shape[0]):
             msg += "Template {},=\"{}\",,,,,,,,,,,".format(
                 i, np.array2string(self.__tpl[i], separator=''))
-        msg += "\n\n"
+        msg += "\n"
         for i in range(self.__tpl.shape[0]):
             msg += "SequenceID,p-value,chi_square,Number of matches,,,,,,,,,"
         msg += "\n"
@@ -840,7 +840,7 @@ class OverlappingTemplateMatchingTest(STS):
         
         """
         bits = np.resize(bits, (self.__blk_num,self.__blk_len)).astype('uint8')
-        hist = np.zeros(self.__k+1, dtype='uint8')
+        hist = np.zeros(self.__k+1, dtype=int)
         res = cv2.matchTemplate(bits, self.__tpl, cv2.TM_SQDIFF)
         match = np.count_nonzero(res <= 0.5, axis=1)
         for i in range(self.__k):
@@ -871,9 +871,9 @@ class OverlappingTemplateMatchingTest(STS):
                 self.__tpl, separator=''))
         msg += "Block length,{}\n".format(self.__blk_len)
         msg += "Number of blocks,{}\n".format(self.__blk_num)
-        msg += (",,Pi (theoretical probabilities of matches),{}\n"
+        msg += ("\n,,Pi (theoretical probabilities of matches),{}\n"
             .format(np.array2string(self.__pi, separator=',')))
-        msg += "\nSequenceID,p-value,chi_square,Histogram of matches\n"
+        msg += "SequenceID,p-value,chi_square,Histogram of matches\n"
         msg += ",,,{}<=\n".format(
             np.array2string(np.arange(self.__k+1), separator=','))
         for i, j in enumerate(results):

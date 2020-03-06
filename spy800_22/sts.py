@@ -2,8 +2,8 @@
 # -*- Coding: utf-8 -*-
 """Implementation of SP800-22 test algorithms by Python.
 
-This module is part of the spy800_22 package and inherited by other modules in
-the package. It consists of 1 Base class `STS` and 7 Error classes.
+This is a core module of the spy800-22 package.
+It consists of 1 Base class `STS` and 7 Error classes.
 
 Details of NIST SP800-22:
 https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-22r1a.pdf
@@ -131,7 +131,7 @@ class STS:
         if not os.path.isfile(file_path):
             msg = "File \"{}\" is not found.".format(file_path)
             raise InvalidSettingError(msg)
-        print("\nLoading bits.", end="")
+        print("\nLoading bits.")
         self.__sequence = np.zeros(
             self.__sequence_len*self.__sequence_num, dtype='int8')
 
