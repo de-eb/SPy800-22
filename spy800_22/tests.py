@@ -43,7 +43,6 @@ class FrequencyTest(STS):
     """
 
     ID = STS.TestID.FREQUENCY
-    NAME = "Frequency (Monobit) Test"
 
     def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
             ig_err: bool =False, init: bool =True) -> None:
@@ -66,8 +65,11 @@ class FrequencyTest(STS):
         """
         if init:
             super().__init__(seq_len, seq_num, proc_num, ig_err)
+    
+    def param(self) -> None:
+        return None
 
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluate the uniformity of 0s and 1s for the entire sequence.
 
         Parameters
@@ -88,30 +90,20 @@ class FrequencyTest(STS):
         ones = np.count_nonzero(bits)
         zeros = bits.size - ones
         p_value = erfc((abs(ones-zeros)/sqrt(bits.size))/sqrt(2))
-        return p_value, zeros, ones
+        return {'p-value': p_value, 'zeros': zeros, 'ones': ones}
 
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = FrequencyTest.NAME + "\n"
-        msg += "\nSequenceID,p-value,zeros count,ones count\n"
-        for i, j in enumerate(results):
-            if j[0] is None:
-                msg += "{},{},{},{}\n".format(i, j[1], j[2], j[3])
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,Proportion,{}\n".format(res['Proportion'])
+        csv += ",,Uniformity,{}\n".format(res['Uniformity'])
+        csv += ",,SequenceID,p-value,zeros count,ones count\n"
+        for i in range(len(res['p-value'])):
+            if res['err'][i] is None:
+                csv += ",,{},{},{},{}\n".format(i, res['p-value'][i],
+                    res['zeros'][i], res['ones'][i])
             else:
-                msg += "{},{}\n".format(i, j[0])
-        return msg
+                csv += ",,{},{}\n".format(i, res['err'][i])
+        return csv
 
 
 class BlockFrequencyTest(STS):
@@ -127,7 +119,6 @@ class BlockFrequencyTest(STS):
     """
 
     ID = STS.TestID.BLOCKFREQUENCY
-    NAME = "Frequency Test within a Block"
 
     def __init__(self, seq_len: int, seq_num: int, blk_len: int =128,
             proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
@@ -158,8 +149,12 @@ class BlockFrequencyTest(STS):
             raise InvalidSettingError(msg)
         self.__blk_len = blk_len
         self.__blk_num = seq_len // blk_len
+
+    def param(self) -> dict:
+        return {'Block length': self.__blk_len,
+                'Number of blocks': self.__blk_num}
     
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluate the proportion of 1s for each M-bit subsequence.
 
         Parameters
@@ -179,32 +174,20 @@ class BlockFrequencyTest(STS):
         sigma = np.sum((np.sum(bits, axis=1)/self.__blk_len - 0.5)**2)
         chi_square = 4 * self.__blk_len * sigma
         p_value = gammaincc(self.__blk_num/2 , chi_square/2)
-        return p_value, chi_square
+        return {'p-value': p_value, 'chi^2': chi_square}
     
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = BlockFrequencyTest.NAME + "\n"
-        msg += "\nBlock length,{}\n".format(self.__blk_len)
-        msg += "Number of blocks,{}\n".format(self.__blk_num)
-        msg += "\nSequenceID,p-value,chi_square\n"
-        for i, j in enumerate(results):
-            if j[0] is None:
-                msg += "{},{},{}\n".format(i, j[1], j[2])
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,Proportion,{}\n".format(res['Proportion'])
+        csv += ",,Uniformity,{}\n".format(res['Uniformity'])
+        csv += ",,SequenceID,p-value,chi^2\n"
+        for i in range(len(res['p-value'])):
+            if res['err'][i] is None:
+                csv += ",,{},{},{}\n".format(i,
+                    res['p-value'][i], res['chi^2'][i])
             else:
-                msg += "{},{}\n".format(i, j[0])
-        return msg
+                csv += ",,{},{}\n".format(i, res['err'][i])
+        return csv
 
 
 class RunsTest(STS):
@@ -220,7 +203,6 @@ class RunsTest(STS):
     """
 
     ID = STS.TestID.RUNS
-    NAME = "Runs Test"
 
     def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
             ig_err: bool =False, init: bool =True) -> None:
@@ -243,8 +225,11 @@ class RunsTest(STS):
         """
         if init:
             super().__init__(seq_len, seq_num, proc_num, ig_err)
+    
+    def param(self) -> None:
+        return None
         
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluate the total number of "Run"s for the entire sequence.
         
         "Run" is a continuation of the same bit.
@@ -271,30 +256,20 @@ class RunsTest(STS):
         run = np.count_nonzero(np.diff(bits))
         p_value = erfc(
             abs(run-2*bits.size*pi*(1-pi)) / (2*pi*(1-pi)*sqrt(2*bits.size)))
-        return p_value, pi, run
-
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = RunsTest.NAME + "\n"
-        msg += "\nSequenceID,p-value,pi,Runs total\n"
-        for i, j in enumerate(results):
-            if j[0] is None:
-                msg += "{},{},{},{}\n".format(i, j[1], j[2], j[3])
+        return {'p-value': p_value, 'pi': pi, 'run': run}
+    
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,Proportion,{}\n".format(res['Proportion'])
+        csv += ",,Uniformity,{}\n".format(res['Uniformity'])
+        csv += ",,SequenceID,p-value,pi,Total Run\n"
+        for i in range(len(res['p-value'])):
+            if res['err'][i] is None:
+                csv += ",,{},{},{},{}\n".format(i, res['p-value'][i],
+                    res['pi'][i], res['run'][i])
             else:
-                msg += "{},{}\n".format(i, j[0])
-        return msg
+                csv += ",,{},{}\n".format(i, res['err'][i])
+        return csv
 
 
 class LongestRunOfOnesTest(STS):
@@ -310,7 +285,6 @@ class LongestRunOfOnesTest(STS):
     """
 
     ID = STS.TestID.LONGESTRUN
-    NAME = "Test for the Longest Run of Ones in a Block"
 
     def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
             ig_err: bool =False, init: bool =True) -> None:
@@ -351,6 +325,10 @@ class LongestRunOfOnesTest(STS):
             self.__pi = np.array(
                 [0.0882, 0.2092, 0.2483, 0.1933, 0.1208, 0.0675, 0.0727])
         self.__blk_num = seq_len // self.__blk_len
+    
+    def param(self):
+        return {'Block length': self.__blk_len,
+                'Number of Blocks': self.__blk_num}
         
     def func(self, bits) -> tuple:
         """Evaluate the longest "Run" of 1s for each M-bit subsequence.
@@ -384,34 +362,22 @@ class LongestRunOfOnesTest(STS):
         chi_square = np.sum(
             (hist-self.__blk_num*self.__pi)**2 / (self.__blk_num*self.__pi))
         p_value = gammaincc((self.__v.size-1)/2 , chi_square/2)
-        return p_value, chi_square, hist
+        return {'p-value': p_value, 'chi^2': chi_square, 'hist': hist}
 
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = LongestRunOfOnesTest.NAME + "\n"
-        msg += "\nBlock length,{}\n".format(self.__blk_len)
-        msg += "Number of blocks,{}\n".format(self.__blk_num)
-        msg += "\nSequenceID,p-value,chi_square,Histogram of longest Run\n"
-        msg += (",,,<={}<=\n".format(np.array2string(self.__v, separator=',')))
-        for i, j in enumerate(results):
-            if j[0] is None:
-                msg += "{},{},{},{}\n".format(i, j[1], j[2],
-                    np.array2string(j[3], separator=','))
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,Proportion,{}\n".format(res['Proportion'])
+        csv += ",,Uniformity,{}\n".format(res['Uniformity'])
+        csv += ",,SequenceID,p-value,chi^2,Histogram of longest Run"
+        csv += (",<={}<=\n".format(np.array2string(self.__v, separator=',')))
+        for i in range(len(res['p-value'])):
+            if res['err'][i] is None:
+                csv += ",,{},{},{},,{}\n".format(i,
+                    res['p-value'][i], res['chi^2'][i],
+                    np.array2string(res['hist'][i], separator=','))
             else:
-                msg += "{},{}\n".format(i, j[0])
-        return msg.replace('[','').replace(']','')
+                csv += ",,{},{}\n".format(i, res['err'][i])
+        return csv.replace('[','').replace(']','')
 
 
 class BinaryMatrixRankTest(STS):
@@ -427,7 +393,6 @@ class BinaryMatrixRankTest(STS):
     """
 
     ID = STS.TestID.RANK
-    NAME = "Binary Matrix Rank Test"
 
     def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
             ig_err: bool =False, init: bool =True) -> None:
@@ -464,6 +429,12 @@ class BinaryMatrixRankTest(STS):
             self.__prob[i] = (
                 2**(r*(self.__m + self.__q - r) - self.__m*self.__q) * prod)
         self.__prob[2] = 1 - (self.__prob[0] + self.__prob[1])
+    
+    def param(self):
+        return {'Matrix shape M': self.__m,
+                'Matrix shape Q': self.__q,
+                'Number of matrices': self.__mat_num,
+                'Criteria probability': self.__prob}
         
     def func(self, bits) -> tuple:
         """Evaluate the Rank of disjoint sub-matrices of the entire sequence.
@@ -484,18 +455,18 @@ class BinaryMatrixRankTest(STS):
             where M is the length of a matrix row or column.
         
         """
-        freq = np.zeros(3, dtype=int)
+        hist = np.zeros(3, dtype=int)
         rank = np.zeros(self.__mat_num, dtype=int)
         bits = np.resize(bits, (self.__mat_num, self.__m*self.__q))
         for i in range(self.__mat_num):
             rank[i] = self.__matrix_rank(bits[i].reshape((self.__m,self.__q)))
-        freq[0] = np.count_nonzero(rank == self.__m)
-        freq[1] = np.count_nonzero(rank == self.__m-1)
-        freq[2] = self.__mat_num - (freq[0] + freq[1])
-        chi_square = np.sum((freq-self.__mat_num*self.__prob)**2
+        hist[0] = np.count_nonzero(rank == self.__m)
+        hist[1] = np.count_nonzero(rank == self.__m-1)
+        hist[2] = self.__mat_num - (hist[0] + hist[1])
+        chi_square = np.sum((hist-self.__mat_num*self.__prob)**2
                             / (self.__mat_num*self.__prob))
         p_value = exp(-chi_square/2)
-        return p_value, chi_square, freq
+        return {'p-value': p_value, 'chi^2': chi_square, 'hist': hist}
     
     def __matrix_rank(self, mat):
         """Calculate Rank by elementary row operations."""
@@ -513,35 +484,21 @@ class BinaryMatrixRankTest(STS):
                 k += 1
         rank = np.count_nonzero(np.count_nonzero(mat, axis=1))
         return rank
-
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = BinaryMatrixRankTest.NAME + "\n"
-        msg += "\nMatrix shape,{},{}\n".format(self.__m, self.__q)
-        msg += "Number of matrices,{}\n".format(self.__mat_num)
-        msg += "\n,,Criteria probability,{}\n".format(
-            np.array2string(self.__prob, separator=','))
-        msg += "SequenceID,p-value,chi_square,Histogram of Rank\n"
-        msg += ",,,{},{},other\n".format(self.__m, self.__m-1)
-        for i, j in enumerate(results):
-            if j[0] is None:
-                msg += "{},{},{},{}\n".format(i, j[1], j[2],
-                    np.array2string(j[3], separator=','))
+    
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,Proportion,{}\n".format(res['Proportion'])
+        csv += ",,Uniformity,{}\n".format(res['Uniformity'])
+        csv += ",,SequenceID,p-value,chi^2,Histogram of Rank"
+        csv += ",{},{},other\n".format(self.__m, self.__m-1)
+        for i in range(len(res['p-value'])):
+            if res['err'][i] is None:
+                csv += ",,{},{},{},,{}\n".format(i,
+                    res['p-value'][i], res['chi^2'][i],
+                    np.array2string(res['hist'][i], separator=','))
             else:
-                msg += "{},{}\n".format(i, j[0])
-        return msg.replace('[','').replace(']','')
+                csv += ",,{},{}\n".format(i, res['err'][i])
+        return csv.replace('[','').replace(']','')
 
 
 class DiscreteFourierTransformTest(STS):
@@ -557,7 +514,6 @@ class DiscreteFourierTransformTest(STS):
     """
 
     ID = STS.TestID.DFT
-    NAME = "Discrete Fourier Transform (Spectral) Test"
 
     def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
             ig_err: bool =False, init: bool =True) -> None:
@@ -582,8 +538,12 @@ class DiscreteFourierTransformTest(STS):
             super().__init__(seq_len, seq_num, proc_num, ig_err)
         self.__threshold = sqrt(log(1/0.05)*seq_len)
         self.__ref = 0.95 * seq_len / 2
+
+    def param(self) -> dict:
+        return {'Peak threshold': self.__threshold,
+                'Reference peaks': self.__ref}
     
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluate the peak heights in DFT of the sequence.
 
         Parameters
@@ -604,35 +564,23 @@ class DiscreteFourierTransformTest(STS):
         bits = 2*bits - 1
         magnitude = np.abs(fft(bits)[:bits.size // 2])
         count = np.count_nonzero(magnitude < self.__threshold)
-        percentile = 100*count / (bits.size/2)
+        pct = 100*count / (bits.size/2)
         p_value = erfc(
             abs((count-self.__ref)/sqrt(bits.size*0.95*0.05/4)) / sqrt(2))
-        return p_value, percentile, count
+        return {'p-value': p_value, 'percentile': pct, 'peaks': count}
     
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = DiscreteFourierTransformTest.NAME + "\n"
-        msg += "\nPeak threshold,{}\n".format(self.__threshold)
-        msg += "Reference number of peak,{}\n".format(self.__ref)
-        msg += "\nSequenceID,p-value,percentage,peaks below threshold\n"
-        for i, j in enumerate(results):
-            if j[0] is None:
-                msg += "{},{},{},{}\n".format(i, j[1], j[2], j[3])
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,Proportion,{}\n".format(res['Proportion'])
+        csv += ",,Uniformity,{}\n".format(res['Uniformity'])
+        csv += ",,SequenceID,p-value,percentile,peaks below threshold\n"
+        for i in range(len(res['p-value'])):
+            if res['err'][i] is None:
+                csv += ",,{},{},{},{}\n".format(i, res['p-value'][i],
+                    res['percentile'][i], res['peaks'][i])
             else:
-                msg += "{},{}\n".format(i, j[0])
-        return msg
+                csv += ",,{},{}\n".format(i, res['err'][i])
+        return csv
 
 
 class NonOverlappingTemplateMatchingTest(STS):
@@ -648,7 +596,6 @@ class NonOverlappingTemplateMatchingTest(STS):
     """
 
     ID = STS.TestID.NONOVERLAPPING
-    NAME = "Non-overlapping Template Matching Test"
 
     def __init__(self, seq_len: int, seq_num: int, tpl_len: int =9,
             proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
@@ -690,6 +637,12 @@ class NonOverlappingTemplateMatchingTest(STS):
         self.__var = self.__blk_len*(1/2**tpl_len - (2*tpl_len-1)/2**(2*tpl_len))
         self.__tpl = np.load(tpl_path)
     
+    def param(self) -> dict:
+        return {'Template length': self.__tpl.shape[1],
+                'Block length': self.__blk_len,
+                'Number of blocks': self.__blk_num,
+                'Lambda (theoretical mean of matches)': self.__mean}
+    
     def func(self, bits) -> tuple:
         """Evaluates the number of occurrences of templates 
         (unique m-bit patterns) for each M-bit subsequence.
@@ -718,47 +671,31 @@ class NonOverlappingTemplateMatchingTest(STS):
             match[i] = np.count_nonzero(res <= 0.5, axis=1)
         chi_square = np.sum(((match - self.__mean)/self.__var**0.5)**2, axis=1)  # why?
         p_value = gammaincc(self.__blk_num/2 , chi_square/2)
-        return p_value, chi_square, match
+        return {'p-value': p_value, 'chi^2': chi_square, 'matches': match}
     
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = NonOverlappingTemplateMatchingTest.NAME + "\n"
-        msg += "\nTemplate length,{}\n".format(self.__tpl.shape[1])
-        msg += "Block length,{}\n".format(self.__blk_len)
-        msg += "Number of blocks,{}\n".format(self.__blk_num)
-        msg += "Lambda (theoretical mean of matches),{}\n".format(self.__mean)
-        msg += "\n"
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,Template,"
         for i in range(self.__tpl.shape[0]):
-            msg += "Template {},=\"{}\",,,,,,,,,,,".format(
-                i, np.array2string(self.__tpl[i], separator=''))
-        msg += "\n"
-        for i in range(self.__tpl.shape[0]):
-            msg += "SequenceID,p-value,chi_square,Number of matches,,,,,,,,,"
-        msg += "\n"
-        for i in range(self.__tpl.shape[0]):
-            msg += ",,,B0,B1,B2,B3,B4,B5,B6,B7,,"
-        msg += "\n"
-        for i, j in enumerate(results):
-            for k in range(self.__tpl.shape[0]):
-                if j[0] is None:
-                    msg += "{},{},{},{},,".format(i, j[1][k], j[2][k],
-                        np.array2string(j[3][k], separator=','))
-                else:
-                    msg += "{},{},,,,".format(i, j[0])
-            msg += "\n"
-        return msg.replace('[','').replace(']','')
+            csv += "=\"{1}\"{0}".format(","*10,
+                np.array2string(self.__tpl[i], separator=''))
+        csv += "\n,,Proportion,{}\n".format(
+            np.array2string(res['Proportion'], separator=','*10))
+        csv += ",,Uniformity,{}\n".format(
+            np.array2string(res['Uniformity'], separator=','*10))
+        csv += ",,SequenceID{}\n".format(
+            ",p-value,chi^2,B0,B1,B2,B3,B4,B5,B6,B7"*self.__tpl.shape[0])
+        for i in range(len(res['p-value'])):
+            csv += "\n,,{}".format(i)
+            if res['err'][i] is None:
+                for j in range(self.__tpl.shape[0]):
+                    csv += ",{},{},{}".format(
+                        res['p-value'][i][j], res['chi^2'][i][j],
+                        np.array2string(res['matches'][i][j], separator=','))
+            else:
+                csv += ",{}".format(res['err'][i])
+        csv += "\n"
+        return csv.replace('[','').replace(']','')
 
 
 class OverlappingTemplateMatchingTest(STS):
@@ -774,7 +711,6 @@ class OverlappingTemplateMatchingTest(STS):
     """
 
     ID = STS.TestID.OVERLAPPING
-    NAME = "Overlapping Template Matching Test"
 
     def __init__(self, seq_len: int, seq_num: int, tpl_len: int =9,
             proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
@@ -820,6 +756,13 @@ class OverlappingTemplateMatchingTest(STS):
         self.__pi[self.__k] = 1 - np.sum(self.__pi)
         self.__tpl = np.ones((1,tpl_len), dtype='uint8')
     
+    def param(self) -> dict:
+        return {'Template length': self.__tpl.size,
+                'Template': "=\"{}\"".format("1"*self.__tpl.size),
+                'Block length': self.__blk_len,
+                'Number of blocks': self.__blk_num,
+                'Pi (theoretical probabilities of matches)': self.__pi}
+    
     def func(self, bits) -> tuple:
         """Evaluates the number of occurrences of a template 
         (duplicate m-bit pattern) for each M-bit subsequence.
@@ -849,40 +792,23 @@ class OverlappingTemplateMatchingTest(STS):
         chi_square = np.sum(
             (hist - self.__blk_num*self.__pi)**2 / (self.__blk_num*self.__pi))
         p_value = gammaincc(self.__k/2, chi_square/2)
-        return p_value, chi_square, hist
+        return {'p-value': p_value, 'chi^2': chi_square, 'hist': hist}
     
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = OverlappingTemplateMatchingTest.NAME + "\n"
-        msg += "\nTemplate length,{}\n".format(self.__tpl.size)
-        msg += "Template,=\"{}\"\n".format(np.array2string(
-                self.__tpl, separator=''))
-        msg += "Block length,{}\n".format(self.__blk_len)
-        msg += "Number of blocks,{}\n".format(self.__blk_num)
-        msg += ("\n,,Pi (theoretical probabilities of matches),{}\n"
-            .format(np.array2string(self.__pi, separator=',')))
-        msg += "SequenceID,p-value,chi_square,Histogram of matches\n"
-        msg += ",,,{}<=\n".format(
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,Proportion,{}\n".format(res['Proportion'])
+        csv += ",,Uniformity,{}\n".format(res['Uniformity'])
+        csv += ",,SequenceID,p-value,chi^2,Histogram of matches"
+        csv += ",{}<=\n".format(
             np.array2string(np.arange(self.__k+1), separator=','))
-        for i, j in enumerate(results):
-            if j[0] is None:
-                msg += "{},{},{},{}\n".format(i, j[1], j[2],
-                    np.array2string(j[3], separator=','))
+        for i in range(len(res['p-value'])):
+            if res['err'][i] is None:
+                csv += ",,{},{},{},,{}\n".format(
+                    i, res['p-value'][i], res['chi^2'][i],
+                    np.array2string(res['hist'][i], separator=','))
             else:
-                msg += "{},{}\n".format(i, j[0])
-        return msg.replace('[','').replace(']','')
+                csv += ",,{},{}\n".format(i, res['err'][i])
+        return csv.replace('[','').replace(']','')
 
 
 class MaurersUniversalStatisticalTest(STS):
@@ -898,7 +824,6 @@ class MaurersUniversalStatisticalTest(STS):
     """
 
     ID = STS.TestID.UNIVERSAL
-    NAME = "Maurer's \"Universal Statistical\" Test"
 
     def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
             ig_err: bool =False, init: bool =True) -> None:
@@ -943,6 +868,12 @@ class MaurersUniversalStatisticalTest(STS):
             (0.7 - 0.8/self.__blk_len + (4+32/self.__blk_len)/15
             * self.__k**(-3/self.__blk_len)) * sqrt(self.__var/self.__k))
     
+    def param(self) -> dict:
+        return {'Block length': self.__blk_len,
+                'Theoretical variance': self.__var,
+                'Theoretical expected value': self.__exp_val,
+                'Theoretical standard deviation': self.__sigma}
+    
     def func(self, bits) -> tuple:
         """Evaluate the distance between L-bit patterns repeatedly observed.
 
@@ -970,7 +901,7 @@ class MaurersUniversalStatisticalTest(STS):
                 np.append(-t[i], np.where(bits[self.__q:]==i)))))
         phi = s / self.__k
         p_value = erfc(abs(phi-self.__exp_val) / (sqrt(2)*self.__sigma))
-        return p_value, phi
+        return {'p-value': p_value, 'phi': phi}
     
     def __packbits(self, x, reverse=True):
         """Converts a binary matrix to a decimal value."""
@@ -979,32 +910,18 @@ class MaurersUniversalStatisticalTest(STS):
             p = p[::-1]
         return np.dot(x, p)
     
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = MaurersUniversalStatisticalTest.NAME + "\n"
-        msg += "\nBlock length,{}\n".format(self.__blk_len)
-        msg += "Theoretical variance,{}\n".format(self.__var)
-        msg += "Theoretical expected value,{}\n".format(self.__exp_val)
-        msg += "Theoretical standard deviation,{}\n".format(self.__sigma)
-        msg += "\nSequenceID,p-value,pi\n"
-        for i, j in enumerate(results):
-            if j[0] is None:
-                msg += "{},{},{}\n".format(i, j[1], j[2])
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,Proportion,{}\n".format(res['Proportion'])
+        csv += ",,Uniformity,{}\n".format(res['Uniformity'])
+        csv += ",,SequenceID,p-value,pi\n"
+        for i in range(len(res['p-value'])):
+            if res['err'][i] is None:
+                csv += ",,{},{},{}\n".format(i, res['p-value'][i],
+                    res['phi'][i])
             else:
-                msg += "{},{}\n".format(i, j[0])
-        return msg
+                csv += ",,{},{}\n".format(i, res['err'][i])
+        return csv
 
 
 class LinearComplexityTest(STS):
@@ -1020,7 +937,6 @@ class LinearComplexityTest(STS):
     """
 
     ID = STS.TestID.COMPLEXITY
-    NAME = "Linear complexity Test"
 
     def __init__(self, seq_len: int, seq_num: int, blk_len: int =500,
             proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
@@ -1055,6 +971,11 @@ class LinearComplexityTest(STS):
             blk_len/2 + ((-1)**(blk_len+1)+9)/36 - (blk_len/3+2/9)/2**blk_len)
         self.__pi = np.array(
             [0.01047, 0.03125, 0.12500, 0.50000, 0.25000, 0.06250, 0.020833])
+
+    def param(self) -> dict:
+        return {'Block length': self.__blk_len,
+                'Number of blocks': self.__blk_num,
+                'Theoretical mean of linear complexity': self.__mu}
     
     def func(self, bits) -> tuple:
         """Evaluate the length of the linear feedback shift register (LFSR).
@@ -1084,7 +1005,7 @@ class LinearComplexityTest(STS):
         chi_square = np.sum(
             (hist-self.__blk_num*self.__pi)**2 / (self.__blk_num*self.__pi))
         p_value = gammaincc(6/2.0 , chi_square/2.0)
-        return p_value, chi_square, hist
+        return {'p-value': p_value, 'chi^2': chi_square, 'hist': hist}
     
     def __bma(self, bits):
         """Berlekamp Massey Algorithm."""
@@ -1102,33 +1023,20 @@ class LinearComplexityTest(STS):
                     b = t
         return l
     
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = LinearComplexityTest.NAME + "\n"
-        msg += "\nBlock length,{}\n".format(self.__blk_len)
-        msg += "Number of blocks,{}\n".format(self.__blk_num)
-        msg += "Theoretical mean of linear complexity,{}\n".format(self.__mu)
-        msg += "\nSequenceID,p-value,chi_square,Histogram of T\n"
-        msg += ",,,C0,C1,C2,C3,C4,C5,C6\n"
-        for i, j in enumerate(results):
-            if j[0] is None:
-                msg += "{},{},{},{}\n".format(i, j[1], j[2],
-                    np.array2string(j[3], separator=','))
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,Proportion,{}\n".format(res['Proportion'])
+        csv += ",,Uniformity,{}\n".format(res['Uniformity'])
+        csv += ",,SequenceID,p-value,chi^2,Histogram of T"
+        csv += ",C0,C1,C2,C3,C4,C5,C6\n"
+        for i in range(len(res['p-value'])):
+            if res['err'][i] is None:
+                csv += ",,{},{},{},,{}\n".format(
+                    i, res['p-value'][i], res['chi^2'][i],
+                    np.array2string(res['hist'][i], separator=','))
             else:
-                msg += "{},{}\n".format(i, j[0])
-        return msg.replace('[','').replace(']','')
+                csv += ",,{},{}\n".format(i, res['err'][i])
+        return csv.replace('[','').replace(']','')
 
 
 class SerialTest(STS):
@@ -1144,7 +1052,6 @@ class SerialTest(STS):
     """
 
     ID = STS.TestID.SERIAL
-    NAME = "Serial Test"
 
     def __init__(self, seq_len: int, seq_num: int, blk_len: int =16,
             proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
@@ -1175,6 +1082,9 @@ class SerialTest(STS):
             raise InvalidSettingError(msg)
         self.__blk_len = blk_len
     
+    def param(self) -> dict:
+        return {'Block length': self.__blk_len}
+    
     def func(self, bits) -> tuple:
         """Evaluate the frequency of all possible overlapping m-bit patterns.
 
@@ -1198,7 +1108,7 @@ class SerialTest(STS):
         p_value[0] = gammaincc(2**(self.__blk_len-1)/2.0, (psi[0]-psi[1])/2.0)
         p_value[1] = gammaincc(
             2**(self.__blk_len-2)/2.0, (psi[0]-2*psi[1]+psi[2])/2.0)
-        return p_value, psi
+        return {'p-value': p_value, 'psi': psi}
     
     def __psi_square(self, x, m):
         """Compute statistics."""
@@ -1213,31 +1123,19 @@ class SerialTest(STS):
         s = np.sum(p[2**m-1 : 2**(m+1)-1]**2) * 2**m/x.size - x.size
         return s
     
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = SerialTest.NAME + "\n"
-        msg += "\nBlock length,{}\n".format(self.__blk_len)
-        msg += "\nSequenceID,p-value1,p-value2,psi_m,psi_m-1,psi_m-2\n"
-        for i, j in enumerate(results):
-            if j[0] is None:
-                msg += "{},{},{}\n".format(i, 
-                    np.array2string(j[1], separator=','),
-                    np.array2string(j[2], separator=','))
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,Proportion,{0[0]},{0[1]}\n".format(res['Proportion'])
+        csv += ",,Uniformity,{0[0]},{0[1]}\n".format(res['Uniformity'])
+        csv += ",,SequenceID,p-value1,p-value2,psi_m,psi_m-1,psi_m-2\n"
+        for i in range(len(res['p-value'])):
+            if res['err'][i] is None:
+                csv += ",,{},{},{}\n".format(
+                    i, np.array2string(res['p-value'][i], separator=','),
+                    np.array2string(res['psi'][i], separator=','))
             else:
-                msg += "{},{}\n".format(i, j[0])
-        return msg.replace('[','').replace(']','')
+                csv += ",,{},{}\n".format(i, res['err'][i])
+        return csv.replace('[','').replace(']','')
 
 
 class ApproximateEntropyTest(STS):
@@ -1253,7 +1151,6 @@ class ApproximateEntropyTest(STS):
     """
 
     ID = STS.TestID.ENTROPY
-    NAME = "Approximate entropy Test"
 
     def __init__(self, seq_len: int, seq_num: int, blk_len: int =10,
             proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
@@ -1284,6 +1181,9 @@ class ApproximateEntropyTest(STS):
             raise InvalidSettingError(msg)
         self.__blk_len = blk_len
     
+    def param(self) -> dict:
+        return {'Block length': self.__blk_len}
+    
     def func(self, bits) -> tuple:
         """Evaluate the frequency of all possible overlapping m-bit patterns.
 
@@ -1306,7 +1206,7 @@ class ApproximateEntropyTest(STS):
             - self.__phi_m(bits, self.__blk_len+1))
         chi_square = 2*bits.size*(log(2) - apen)
         p_value = gammaincc(2**(self.__blk_len-1), chi_square/2.0)
-        return p_value, chi_square, apen
+        return {'p-value': p_value, 'chi^2': chi_square, 'entropy': apen}
     
     def __phi_m(self, x, m):
         """Compute statistics."""
@@ -1322,29 +1222,18 @@ class ApproximateEntropyTest(STS):
         s = np.sum(ref*np.log(ref/x.size)) / x.size
         return s
     
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = ApproximateEntropyTest.NAME + "\n"
-        msg += "\nBlock length,{}\n".format(self.__blk_len)
-        msg += "\nSequenceID,p-value,chi_square,Approximate entropy\n"
-        for i, j in enumerate(results):
-            if j[0] is None:
-                msg += "{},{},{},{}\n".format(i, j[1], j[2], j[3])
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,Proportion,{}\n".format(res['Proportion'])
+        csv += ",,Uniformity,{}\n".format(res['Uniformity'])
+        csv += ",,SequenceID,p-value,chi^2,Approximate entropy\n"
+        for i in range(len(res['p-value'])):
+            if res['err'][i] is None:
+                csv += ",,{},{},{},{}\n".format(i, res['p-value'][i],
+                    res['chi^2'][i], res['entropy'][i])
             else:
-                msg += "{},{}\n".format(i, j[0])
-        return msg
+                csv += ",,{},{}\n".format(i, res['err'][i])
+        return csv
 
 
 class CumulativeSumsTest(STS):
@@ -1360,7 +1249,6 @@ class CumulativeSumsTest(STS):
     """
 
     ID = STS.TestID.CUSUM
-    NAME = "Cumulative Sums (Cusum) Test"
 
     def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
             ig_err: bool =False, init: bool =True) -> None:
@@ -1383,6 +1271,9 @@ class CumulativeSumsTest(STS):
         """
         if init:
             super().__init__(seq_len, seq_num, proc_num, ig_err)
+    
+    def param(self) -> None:
+        return None
 
     def func(self, bits) -> tuple:
         """Evaluate the maximal excursion (from `0`) of the random walk.
@@ -1412,7 +1303,7 @@ class CumulativeSumsTest(STS):
         sums[1] = np.max(np.abs(np.cumsum(bits[::-1])))
         p_value[1] = (1 - self.__sigma(bits.size, sums[1])
                         + self.__sigma(bits.size, sums[1], term=True))
-        return p_value, sums
+        return {'p-value': p_value, 'cusums': sums}
     
     def __sigma(self, n, z, term=False):
         a, b, c = 1, 1, -1
@@ -1421,32 +1312,21 @@ class CumulativeSumsTest(STS):
         k = np.arange(int((-n/z+a)//4), int((n/z-1)//4)+1)
         s = np.sum(norm.cdf((4*k+b)*z/sqrt(n)) - norm.cdf((4*k+c)*z/sqrt(n)))
         return s
-
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = CumulativeSumsTest.NAME + "\n"
-        msg += "\n,Forward,,Reverse\n"
-        msg += "SequenceID,p-value,maximum partial sum"
-        msg += ",p-value,maximum partial sum\n"
-        for i, j in enumerate(results):
-            if j[0] is None:
-                msg += "{},{},{},{},{}\n".format(
-                    i, j[1][0], j[2][0], j[1][1], j[2][1])
+    
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,Proportion,{0[0]},,{0[1]}\n".format(res['Proportion'])
+        csv += ",,Uniformity,{0[0]},,{0[1]}\n".format(res['Uniformity'])
+        csv += ",,SequenceID,p-value(Forward),maximum partial sum(Forward)"\
+            ",p-value(Reverse),maximum partial sum(Reverse)\n"
+        for i in range(len(res['p-value'])):
+            if res['err'][i] is None:
+                csv += ",,{},{},{},{},{}\n".format(
+                    i, res['p-value'][i][0], res['cusums'][i][0],
+                    res['p-value'][i][1], res['cusums'][i][1])
             else:
-                msg += "{},{}\n".format(i, j[0])
-        return msg
+                csv += ",,{},{}\n".format(i, res['err'][i])
+        return csv
 
 
 class RandomExcursionsTest(STS):
@@ -1462,7 +1342,6 @@ class RandomExcursionsTest(STS):
     """
 
     ID = STS.TestID.EXCURSIONS
-    NAME = "Random Excursions Test"
 
     def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
             ig_err: bool =False, init: bool =True) -> None:
@@ -1496,6 +1375,10 @@ class RandomExcursionsTest(STS):
         self.__stat = np.array([-4, -3, -2, -1, 1, 2, 3, 4])
         self.__up_lim = max(1000, seq_len/100)
         self.__low_lim = max(500, 0.005*sqrt(seq_len))
+    
+    def param(self) -> dict:
+        return {'Upper limit of cycles': self.__up_lim,
+                'Lower limit of cycles': self.__low_lim}
 
     def func(self, bits) -> tuple:
         """Evaluate the number of cycles having K visits in a random walk.
@@ -1522,9 +1405,9 @@ class RandomExcursionsTest(STS):
         s = np.pad(np.cumsum(bits), (1,1))
         idx = np.where(s==0)[0]
         cycle = idx.size - 1
-        # if cycle > self.__up_lim or cycle < self.__low_lim:
-        #     msg = "Number of cycles is out of expected range."
-        #     raise StatisticalError(msg)
+        if cycle > self.__up_lim or cycle < self.__low_lim:
+            msg = "Number of cycles is out of expected range."
+            raise StatisticalError(msg)
         hist = np.zeros((cycle, self.__stat.size), dtype=int)
         freq = np.zeros((6, self.__stat.size), dtype=int)
         for i in range(cycle):
@@ -1535,40 +1418,28 @@ class RandomExcursionsTest(STS):
         freq[i] = np.count_nonzero(hist>i, axis=0)
         chi_square = np.sum((freq-cycle*self.__pi)**2/(cycle*self.__pi),axis=0)
         p_value = gammaincc(2.5 , chi_square/2.0)
-        return p_value, chi_square, cycle
-
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = RandomExcursionsTest.NAME + "\n"
-        msg += "\nUpper limit of cycles,{}\n".format(self.__up_lim)
-        msg += "Lower limit of cycles,{}\n".format(self.__low_lim)
-        msg += "\n,State,{}\n".format(
+        return {'p-value': p_value, 'chi^2': chi_square, 'cycles': cycle}
+    
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,State,,{}\n".format(
             np.array2string(self.__stat, separator=',,'))
-        msg += "SequenceID,Number of cycles"
-        for i in range(self.__stat.size):
-            msg += ",p-value,chi_square"
-        msg += "\n"
-        for i, j in enumerate(results):
-            if j[0] is None:
-                msg += "{},{}".format(i, j[3])
-                for k in range(self.__stat.size):
-                    msg += ",{},{}".format(j[1][k], j[2][k])
-                msg += "\n"
+        csv += ",,Proportion,,{}\n".format(
+            np.array2string(res['Proportion'], separator=',,'))
+        csv += ",,Uniformity,,{}\n".format(
+            np.array2string(res['Uniformity'], separator=',,'))
+        csv += ",,SequenceID,Number of cycles"\
+            "{}\n".format(",p-value,chi_square"*self.__stat.size)
+        for i in range(len(res['p-value'])):
+            if res['err'][i] is None:
+                csv += ",,{},{}".format(i, res['cycles'][i])
+                for j in range(self.__stat.size):
+                    csv += ",{},{}".format(
+                        res['p-value'][i][j], res['chi^2'][i][j])
+                csv += "\n"
             else:
-                msg += "{},{}\n".format(i, j[0])
-        return msg.replace('[','').replace(']','')
+                csv += ",,{},{}\n".format(i, res['err'][i])
+        return csv.replace('[','').replace(']','')
 
 
 class RandomExcursionsVariantTest(STS):
@@ -1584,7 +1455,6 @@ class RandomExcursionsVariantTest(STS):
     """
 
     ID = STS.TestID.EXCURSIONSVAR
-    NAME = "Random Excursions Variant Test"
 
     def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
             ig_err: bool =False, init: bool =True) -> None:
@@ -1609,8 +1479,11 @@ class RandomExcursionsVariantTest(STS):
             super().__init__(seq_len, seq_num, proc_num, ig_err)
         self.__stat = np.array([-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9])
         self.__low_lim = max(500, 0.005*sqrt(seq_len))
+    
+    def param(self) -> dict:
+        return {'Lower limit of cycles' : self.__low_lim}
 
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluate the total number of times that
         a particular state is visited in a random walk.
         
@@ -1634,44 +1507,33 @@ class RandomExcursionsVariantTest(STS):
         s = np.pad(np.cumsum(bits), (1,1))
         idx = np.where(s==0)[0]
         cycle = idx.size - 1
-        # if cycle < self.__low_lim:
-        #     msg = "Number of cycles is out of expected range."
-        #     raise StatisticalError(msg)
+        if cycle < self.__low_lim:
+            msg = "Number of cycles is out of expected range."
+            raise StatisticalError(msg)
         xi = np.zeros_like(self.__stat)
         for i in range(self.__stat.size):
             xi[i] = np.count_nonzero(s==self.__stat[i])
         p_value = erfc(
             np.abs(xi-cycle) / np.sqrt(2*cycle*(4*np.abs(self.__stat)-2)))
-        return p_value, xi, cycle
+        return {'p-value': p_value, 'xi': xi, 'cycles': cycle}
 
-    def report(self, results: list) -> str:
-        """Generate a CSV string from the partial test results.
-
-        Parameters
-        ----------
-        results : `list`
-            List of test results (List of returns of `func` method).
-        
-        Returns
-        -------
-        msg : `str`
-            Generated report.
-        
-        """
-        msg = RandomExcursionsVariantTest.NAME + "\n"
-        msg += "\nLower limit of cycles,{}\n".format(self.__low_lim)
-        msg += "\n,State,{}\n".format(
+    def to_csv(self, res: dict) -> str:
+        """Generate a CSV string from the partial test results."""
+        csv = ",,State,,{}\n".format(
             np.array2string(self.__stat, separator=',,'))
-        msg += "SequenceID,Number of cycles"
-        for i in range(self.__stat.size):
-            msg += ",p-value,Total visits"
-        msg += "\n"
-        for i, j in enumerate(results):
-            if j[0] is None:
-                msg += "{},{}".format(i, j[3])
-                for k in range(self.__stat.size):
-                    msg += ",{},{}".format(j[1][k], j[2][k])
-                msg += "\n"
+        csv += ",,Proportion,,{}\n".format(
+            np.array2string(res['Proportion'], separator=',,'))
+        csv += ",,Uniformity,,{}\n".format(
+            np.array2string(res['Uniformity'], separator=',,'))
+        csv += ",,SequenceID,Number of cycles"\
+            "{}\n".format(",p-value,Total visits"*self.__stat.size)
+        for i in range(len(res['p-value'])):
+            if res['err'][i] is None:
+                csv += ",,{},{}".format(i, res['cycles'][i])
+                for j in range(self.__stat.size):
+                    csv += ",{},{}".format(
+                        res['p-value'][i][j], res['xi'][i][j])
+                csv += "\n"
             else:
-                msg += "{},{}\n".format(i, j[0])
-        return msg.replace('[','').replace(']','')
+                csv += ",,{},{}\n".format(i, res['err'][i])
+        return csv.replace('[','').replace(']','')
