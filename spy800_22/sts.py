@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 # -*- Coding: utf-8 -*-
+
+
+# sts.py
+#
+# Copyright (c) 2020 Takuya Kawashima
+#
+# This software is released under the MIT License.
+# http://opensource.org/licenses/mit-license.php
+
+
 """Implementation of SP800-22 test algorithms by Python.
 
 This is a core module of the spy800-22 package.

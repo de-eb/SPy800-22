@@ -1,5 +1,15 @@
 #!/usr/bin/env python3
 # -*- Coding: utf-8 -*-
+
+
+# tests.py
+#
+# Copyright (c) 2020 Takuya Kawashima
+#
+# This software is released under the MIT License.
+# http://opensource.org/licenses/mit-license.php
+
+
 """Implementation of SP800-22 test algorithms by Python.
 
 This module is part of the spy800_22 package and consists of 15 + 1 classes.
