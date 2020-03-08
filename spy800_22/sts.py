@@ -24,9 +24,9 @@ from scipy.special import gammaincc
 class STS:
     """spy800-22 base class
 
-    This is a superclass inherited by all classes in the spy800-22 package.
+    This is a class inherited by all classes in the spy800-22 package.
     Implement the functions commonly used by each class (Bits input, parallel
-    testing, error monitoring, summary and output of test results, etc.).
+    testing, summary and output of test results, etc.).
 
     """
 
@@ -137,8 +137,8 @@ class STS:
         return self.__sequence
     
     @property
-    def results(self):
-        """`list`: Test results."""
+    def results(self) -> dict:
+        """`dict`: Test results."""
         return self.__results
     
     @property
@@ -239,12 +239,7 @@ class STS:
                     n += 1
     
     def run(self) -> None:
-        """Run the test.
-        
-        If the `processes_num` is set to 2 or more in the instantiation,
-        the test will be parallelized.
-
-        """
+        """Run the test."""
         if not self.__is_ready:
             print("No bits have been loaded. Unable to start test.")
             return
@@ -346,11 +341,10 @@ class STS:
             self.__results[k]['Passed'] = res0[2]
             self.__results[k]['Uniformity'] = res1[0]
             self.__results[k]['Histogram'] = res1[1]
+        self.__is_assessed = True
 
     def __calc_proportion(self, p):
-        """Calcurate the proportion of passing sequences.
-
-        """
+        """Calcurate the proportion of passing sequences."""
         p_values = None
         err_idx = []
         for i, j in enumerate(p):
@@ -372,9 +366,7 @@ class STS:
         return prop, prop_lim, passed, p_values
     
     def __calc_uniformity(self, p_vals):
-        """Calcurate the uniformity of p_values.
-
-        """
+        """Calcurate the uniformity of p_values."""
         hist = np.zeros((p_vals.shape[1],10), dtype=int)
         if p_vals.shape[0] == 0:
             return 0.0, hist
@@ -398,9 +390,9 @@ class STS:
             Destination directory and file name.
         
         """
-        if not self.__is_finished:
-            csv = "Cannot make report because the test has not been completed."
-            raise InvalidProceduralError(csv)
+        if not self.__is_assessed:
+            print("Assessment not completed. Unable to make report.")
+            return
 
         with open(file_path, mode='w') as f:
             csv = "SP800-22 Test Report\n\n"
