@@ -65,9 +65,6 @@ class FrequencyTest(STS):
         """
         if init:
             super().__init__(seq_len, seq_num, proc_num, ig_err)
-    
-    def param(self) -> None:
-        return None
 
     def func(self, bits) -> dict:
         """Evaluate the uniformity of 0s and 1s for the entire sequence.
@@ -150,7 +147,9 @@ class BlockFrequencyTest(STS):
         self.__blk_len = blk_len
         self.__blk_num = seq_len // blk_len
 
+    @property
     def param(self) -> dict:
+        """Return the local parameters for each test as a dictionary."""
         return {'Block length': self.__blk_len,
                 'Number of blocks': self.__blk_num}
     
@@ -225,9 +224,6 @@ class RunsTest(STS):
         """
         if init:
             super().__init__(seq_len, seq_num, proc_num, ig_err)
-    
-    def param(self) -> None:
-        return None
         
     def func(self, bits) -> dict:
         """Evaluate the total number of "Run"s for the entire sequence.
@@ -326,7 +322,9 @@ class LongestRunOfOnesTest(STS):
                 [0.0882, 0.2092, 0.2483, 0.1933, 0.1208, 0.0675, 0.0727])
         self.__blk_num = seq_len // self.__blk_len
     
-    def param(self):
+    @property
+    def param(self) -> dict:
+        """Return the local parameters for each test as a dictionary."""
         return {'Block length': self.__blk_len,
                 'Number of Blocks': self.__blk_num}
         
@@ -430,7 +428,9 @@ class BinaryMatrixRankTest(STS):
                 2**(r*(self.__m + self.__q - r) - self.__m*self.__q) * prod)
         self.__prob[2] = 1 - (self.__prob[0] + self.__prob[1])
     
-    def param(self):
+    @property
+    def param(self) -> dict:
+        """Return the local parameters for each test as a dictionary."""
         return {'Matrix shape M': self.__m,
                 'Matrix shape Q': self.__q,
                 'Number of matrices': self.__mat_num,
@@ -539,7 +539,9 @@ class DiscreteFourierTransformTest(STS):
         self.__threshold = sqrt(log(1/0.05)*seq_len)
         self.__ref = 0.95 * seq_len / 2
 
+    @property
     def param(self) -> dict:
+        """Return the local parameters for each test as a dictionary."""
         return {'Peak threshold': self.__threshold,
                 'Reference peaks': self.__ref}
     
@@ -637,7 +639,9 @@ class NonOverlappingTemplateMatchingTest(STS):
         self.__var = self.__blk_len*(1/2**tpl_len - (2*tpl_len-1)/2**(2*tpl_len))
         self.__tpl = np.load(tpl_path)
     
+    @property
     def param(self) -> dict:
+        """Return the local parameters for each test as a dictionary."""
         return {'Template length': self.__tpl.shape[1],
                 'Block length': self.__blk_len,
                 'Number of blocks': self.__blk_num,
@@ -756,7 +760,9 @@ class OverlappingTemplateMatchingTest(STS):
         self.__pi[self.__k] = 1 - np.sum(self.__pi)
         self.__tpl = np.ones((1,tpl_len), dtype='uint8')
     
+    @property
     def param(self) -> dict:
+        """Return the local parameters for each test as a dictionary."""
         return {'Template length': self.__tpl.size,
                 'Template': "=\"{}\"".format("1"*self.__tpl.size),
                 'Block length': self.__blk_len,
@@ -868,7 +874,9 @@ class MaurersUniversalStatisticalTest(STS):
             (0.7 - 0.8/self.__blk_len + (4+32/self.__blk_len)/15
             * self.__k**(-3/self.__blk_len)) * sqrt(self.__var/self.__k))
     
+    @property
     def param(self) -> dict:
+        """Return the local parameters for each test as a dictionary."""
         return {'Block length': self.__blk_len,
                 'Theoretical variance': self.__var,
                 'Theoretical expected value': self.__exp_val,
@@ -972,7 +980,9 @@ class LinearComplexityTest(STS):
         self.__pi = np.array(
             [0.01047, 0.03125, 0.12500, 0.50000, 0.25000, 0.06250, 0.020833])
 
+    @property
     def param(self) -> dict:
+        """Return the local parameters for each test as a dictionary."""
         return {'Block length': self.__blk_len,
                 'Number of blocks': self.__blk_num,
                 'Theoretical mean of linear complexity': self.__mu}
@@ -1082,7 +1092,9 @@ class SerialTest(STS):
             raise InvalidSettingError(msg)
         self.__blk_len = blk_len
     
+    @property
     def param(self) -> dict:
+        """Return the local parameters for each test as a dictionary."""
         return {'Block length': self.__blk_len}
     
     def func(self, bits) -> tuple:
@@ -1181,7 +1193,9 @@ class ApproximateEntropyTest(STS):
             raise InvalidSettingError(msg)
         self.__blk_len = blk_len
     
+    @property
     def param(self) -> dict:
+        """Return the local parameters for each test as a dictionary."""
         return {'Block length': self.__blk_len}
     
     def func(self, bits) -> tuple:
@@ -1271,9 +1285,6 @@ class CumulativeSumsTest(STS):
         """
         if init:
             super().__init__(seq_len, seq_num, proc_num, ig_err)
-    
-    def param(self) -> None:
-        return None
 
     def func(self, bits) -> tuple:
         """Evaluate the maximal excursion (from `0`) of the random walk.
@@ -1376,7 +1387,9 @@ class RandomExcursionsTest(STS):
         self.__up_lim = max(1000, seq_len/100)
         self.__low_lim = max(500, 0.005*sqrt(seq_len))
     
+    @property
     def param(self) -> dict:
+        """Return the local parameters for each test as a dictionary."""
         return {'Upper limit of cycles': self.__up_lim,
                 'Lower limit of cycles': self.__low_lim}
 
@@ -1480,7 +1493,9 @@ class RandomExcursionsVariantTest(STS):
         self.__stat = np.array([-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9])
         self.__low_lim = max(500, 0.005*sqrt(seq_len))
     
+    @property
     def param(self) -> dict:
+        """Return the local parameters for each test as a dictionary."""
         return {'Lower limit of cycles' : self.__low_lim}
 
     def func(self, bits) -> dict:

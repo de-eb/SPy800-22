@@ -149,6 +149,11 @@ class STS:
     def results(self):
         """`list`: Test results."""
         return self.__results
+    
+    @property
+    def param(self) -> None:
+        """Return the local parameters for each test as a dictionary."""
+        return None
 
     def load_bits(self, file_path: str, fmt: Enum) -> None:
         """Read data from a file and convert it to a binary sequence.
@@ -434,7 +439,7 @@ class STS:
             f.write("\n\nComputational Information\n\n")
             for test in self.__tests:
                 csv = ",{}\n".format(test.ID.to_name())
-                head = test.param()
+                head = test.param
                 if head is not None:
                     for k, v in head.items():
                         if type(v) is np.ndarray:
