@@ -183,7 +183,9 @@ class STS:
         if fmt == STS.ReadAs.BIGENDIAN or fmt == STS.ReadAs.LITTLEENDIAN:
             total_bits *= 8
         if total_bits < self.__sequence.size:
-            raise BitShortageError(self.__sequence.size, total_bits)
+            msg = "Set value ({} x {}) exceeds the bits read ({}).".format(
+                self.__sequence_num, self.__sequence_len, total_bits)
+            raise BitShortageError(msg)
 
         if fmt == STS.ReadAs.ASCII:
             self.__read_bits_in_ascii_format(file_path)
@@ -212,7 +214,9 @@ class STS:
                 if byte == "0" or byte == "1":
                     self.__sequence[n] = byte
                 else:
-                    raise IllegalBitError(STS.ReadAs.ASCII)
+                    msg = "Data with a different format was detected.\n"\
+                        "Detected: \"{}\", Position: {}".format(byte, n)
+                    raise IllegalBitError(msg)
 
     def __read_bits_in_byte_format(self, file_path: str) -> None:
         """Read data and convert it to a binary sequence."""
@@ -223,7 +227,9 @@ class STS:
                 if byte == b'\x00' or byte == b'\x01':
                     self.__sequence[n] = int.from_bytes(byte, 'big')
                 else:
-                    raise IllegalBitError(STS.ReadAs.BYTE)
+                    msg = "Data with a different format was detected.\n"\
+                        "Detected: \"{}\", Position: {}".format(byte, n)
+                    raise IllegalBitError(msg)
     
     def __read_bits_in_binary_format(
             self, file_path: str, reverse: bool =False) -> None:
@@ -300,7 +306,8 @@ class STS:
         except ZeroDivisionError as err:
             result[2] = "ZeroDivisionError"
             if not self.__ig_err:
-                raise
+                msg = "Division by zero detected."
+                raise ComputationalError(msg, test.ID)
         else:
             result[3] = res
         return result
@@ -473,16 +480,21 @@ class STSError(Exception):
     
     """
 
-    def __init__(self, msg: str):
+    def __init__(self, msg: str, test_id: Enum =None):
         """Set the error message.
 
         Parameters
         ----------
+        test_id : `Enum`
+            Specify the built-in Enum. -> `self.TestID.xxx`
         msg : `str`
             Human readable string describing the exception.
         
         """
-        self.msg = msg
+        self.msg = ""
+        if test_id is not None:
+            self.msg += test_id.to_name() + "\n"
+        self.msg += msg
     
     def __str__(self):
         """Return the error message."""
@@ -494,22 +506,8 @@ class InvalidSettingError(STSError):
 class BitShortageError(STSError):
     """Raised when bits in the file are less than user setting."""
 
-    def __init__(self, set_bits: int, read_bits: int):
-        self.msg = (
-            "The set value ({} bits) exceeds the bits read ({} bits)."
-            .format(set_bits, read_bits))
-
 class IllegalBitError(STSError):
     """Raised when data different from user setting format is read."""
-
-    def __init__(self, fmt: Enum):
-        if fmt == STS.ReadAs.ASCII:
-            annotation = "0x30 or 0x31"
-        elif fmt == STS.ReadAs.BYTE:
-            annotation = "0x00 or 0x01"
-        self.msg = (
-            "Data in a format different from the setting ({}) was detected."
-            .format(annotation))
 
 class InvalidProceduralError(STSError):
     """Raised when methods are called in a incorrect order."""
