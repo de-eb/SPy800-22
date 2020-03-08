@@ -27,7 +27,7 @@ test.report("testresults.csv")
 
 ## Install
 ```
-$ git clone
+$ git clone https://github.com/de-eb/SPy800-22
 ```
 
 ```
@@ -39,4 +39,4 @@ This software is released under the [MIT License](https://opensource.org/license
 
 ## Author
 
-[de-eb]()
+[de-eb](https://github.com/de-eb)
