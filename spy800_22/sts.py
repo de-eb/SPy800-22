@@ -175,7 +175,7 @@ class STS:
         if not os.path.isfile(file_path):
             msg = "File \"{}\" is not found.".format(file_path)
             raise InvalidSettingError(msg)
-        print("\nLoading bits.")
+        print("Loading bits...", end="")
         self.__sequence = np.zeros(
             self.__sequence_len*self.__sequence_num, dtype='int8')
 
@@ -253,19 +253,22 @@ class STS:
             raise InvalidProceduralError(msg)
 
         self.__start_time = datetime.now()
-        print("\nTest in progress.\n")
+        print("Test in progress. ", end="")
         args = []
         for test in self.__tests:
             for seq_id in range(self.__sequence_num):
                 args.append((test, seq_id))
         results = []
+        max_progress = len(args)
+        progress = 0
         with mp.Pool(processes=self.__process_num) as p:
             for result in p.imap_unordered(self.test_wrapper, args):
                 results.append(result)
-                print("\r |{:<50}|"
-                    .format("█"*int(50*len(results)/len(args))), end="")
+                progress += 1
+                print("\rTest in progress. |{:<50}|"
+                    .format("█"*int(50*progress/max_progress)), end="")
         self.__sort_results(results)
-        print("\n\nTest completed.\n")
+        print("\rTest completed.{}".format(" "*55))
         self.__end_time = datetime.now()
         self.__is_finished = True
     
