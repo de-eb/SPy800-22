@@ -28,6 +28,13 @@ class STS:
     Implement the functions commonly used by each class (Bits input, parallel
     testing, summary and output of test results, etc.).
 
+    Attributes
+    ----------
+    ALPHA : `float`
+        Significance level for p-value in all statistical tests.
+    UNIF_LIM : `float`
+        Significance level for uniformity (P-valueT) in final assessment.
+
     """
 
     class TestID(IntEnum):
@@ -302,7 +309,7 @@ class STS:
         return result
     
     def __sort_results(self, results: list) -> None:
-        """Sort the test results by test ID and sequence ID."""
+        """Sort the test results and generate data dictionary."""
         results.sort(key=lambda x: x[1])  # by sequence ID
         results.sort()  # by test ID
         self.__results = {}
@@ -324,7 +331,11 @@ class STS:
             prev_id = r[0]
     
     def assess(self) -> None:
-        """
+        """Final assessment based on NIST guidelines.
+
+        Calculate the pass rate and p-value uniformity for each test.
+        The results are added to the `instance.results` dictionary.
+
         """
         if not self.__is_tested:
             print("Test not completed. Unable to start assessment.")
