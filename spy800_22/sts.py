@@ -3,8 +3,16 @@
 """Implementation of SP800-22 test algorithms by Python.
 
 This is a core module of the spy800-22 package.
-It consists of 1 Base class `STS` and 7 Error classes.
+It consists of 1 base class `STS` and 6 error classes.
+These error classes consist of 5 derived classes based on `STSError`.
 
+Notes
+-----
+Python 3.7 or higher required.
+Depends on NumPy, SciPy and OpenCV libraries.
+
+More info.
+----------
 Details of NIST SP800-22:
 https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-22r1a.pdf
 
@@ -13,13 +21,15 @@ https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software
 
 """
 
+import multiprocessing as mp
 import os
 from datetime import datetime
 from enum import Enum, IntEnum, auto
-import multiprocessing as mp
-import numpy as np
 from math import sqrt
+
+import numpy as np
 from scipy.special import gammaincc
+
 
 class STS:
     """spy800-22 base class

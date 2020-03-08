@@ -2,11 +2,19 @@
 # -*- Coding: utf-8 -*-
 """Implementation of SP800-22 test algorithms by Python.
 
-This module is part of the spy800_22 package and consists of 15 classes.
-Each class corresponds to each test of NIST SP800-22.
-These classes provide various functions (data I/O, parallel processing, etc.)
-to execute each test by itself.
+This module is part of the spy800_22 package and consists of 15 + 1 classes.
+Each of the 15 classes corresponds to 15 tests of NIST SP800-22.
+The last one is a wrapper class to execute these continuously.
+These classes provide various functions (data I/O, parallel testing, etc.)
+to execute each test.
 
+Notes
+-----
+Python 3.7 or higher required.
+Depends on NumPy, SciPy and OpenCV libraries.
+
+More info.
+----------
 Details of NIST SP800-22:
 https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-22r1a.pdf
 
@@ -16,12 +24,14 @@ https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software
 """
 
 import os
-from math import sqrt, log, log2, exp
-import numpy as np
+from math import exp, log, log2, sqrt
+
 import cv2
+import numpy as np
 from scipy.fftpack import fft
-from scipy.stats import norm
 from scipy.special import erfc, gammaincc, loggamma
+from scipy.stats import norm
+
 from spy800_22.sts import STS, InvalidSettingError, StatisticalError
 
 
@@ -32,6 +42,23 @@ class FrequencyTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
+    
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = FrequencyTest(seq_len=1000000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
     
     """
 
@@ -104,6 +131,23 @@ class BlockFrequencyTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
+    
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = BlockFrequencyTest(seq_len=1000000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
     
     """
 
@@ -190,6 +234,23 @@ class RunsTest(STS):
     ID : `Enum`
         A unique identifier for the class.
     
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = RunsTest(seq_len=1000000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
+    
     """
 
     ID = STS.TestID.RUNS
@@ -267,6 +328,23 @@ class LongestRunOfOnesTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
+    
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = LongestRunOfOnesTest(seq_len=1000000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
     
     """
 
@@ -376,6 +454,23 @@ class BinaryMatrixRankTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
+    
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = BinaryMatrixRankTest(seq_len=1000000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
     
     """
 
@@ -497,6 +592,23 @@ class DiscreteFourierTransformTest(STS):
     ID : `Enum`
         A unique identifier for the class.
     
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = DiscreteFourierTransformTest(seq_len=1000000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
+    
     """
 
     ID = STS.TestID.DFT
@@ -580,6 +692,23 @@ class NonOverlappingTemplateMatchingTest(STS):
     ID : `Enum`
         A unique identifier for the class.
     
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = NonOverlappingTemplateMatchingTest(seq_len=100000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
+    
     """
 
     ID = STS.TestID.NONOVERLAPPING
@@ -621,7 +750,7 @@ class NonOverlappingTemplateMatchingTest(STS):
                 "(Template_length + 2) x 8 bits."
             raise InvalidSettingError(msg, self.ID)
         self.__mean = (self.__blk_len - tpl_len + 1) / 2**tpl_len
-        self.__var = self.__blk_len*(1/2**tpl_len - (2*tpl_len-1)/2**(2*tpl_len))
+        self.__var = self.__blk_len*(1/2**tpl_len-(2*tpl_len-1)/2**(2*tpl_len))
         self.__tpl = np.load(tpl_path)
     
     @property
@@ -659,7 +788,7 @@ class NonOverlappingTemplateMatchingTest(STS):
             res = cv2.matchTemplate(
                 bits, self.__tpl[i].reshape((1,-1)), cv2.TM_SQDIFF)
             match[i] = np.count_nonzero(res <= 0.5, axis=1)
-        chi_square = np.sum(((match - self.__mean)/self.__var**0.5)**2, axis=1)  # why?
+        chi_square = np.sum(((match - self.__mean)/self.__var**0.5)**2, axis=1)
         p_value = gammaincc(self.__blk_num/2 , chi_square/2)
         return {'p-value': p_value, 'chi^2': chi_square, 'matches': match}
     
@@ -695,6 +824,23 @@ class OverlappingTemplateMatchingTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
+    
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = OverlappingTemplateMatchingTest(seq_len=1000000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
     
     """
 
@@ -809,6 +955,23 @@ class MaurersUniversalStatisticalTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
+    
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = MaurersUniversalStatisticalTest(seq_len=1000000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
     
     """
 
@@ -925,6 +1088,23 @@ class LinearComplexityTest(STS):
     ID : `Enum`
         A unique identifier for the class.
     
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = LinearComplexityTest(seq_len=1000000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
+    
     """
 
     ID = STS.TestID.COMPLEXITY
@@ -1039,6 +1219,23 @@ class SerialTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
+
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = SerialTest(seq_len=1000000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
     
     """
 
@@ -1140,6 +1337,23 @@ class ApproximateEntropyTest(STS):
     ID : `Enum`
         A unique identifier for the class.
     
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = ApproximateEntropyTest(seq_len=1000000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
+    
     """
 
     ID = STS.TestID.ENTROPY
@@ -1239,6 +1453,23 @@ class CumulativeSumsTest(STS):
     ID : `Enum`
         A unique identifier for the class.
     
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = CumulativeSumsTest(seq_len=1000000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
+    
     """
 
     ID = STS.TestID.CUSUM
@@ -1328,6 +1559,23 @@ class RandomExcursionsTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
+    
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = RandomExcursionsTest(seq_len=1000000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
     
     """
 
@@ -1443,6 +1691,23 @@ class RandomExcursionsVariantTest(STS):
     ID : `Enum`
         A unique identifier for the class.
     
+    Examples
+    --------
+    First, create an instance. You can set various options here.
+    >>> test = RandomExcursionsVariantTest(seq_len=1000000, seq_num=1000)
+
+    Next, read the bits from the file. It supports several file formats.
+    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
+
+    Then, run the test.
+    >>> test.run()
+
+    When the test is over, evaluate the results.
+    >>> test.assess()
+
+    Finally, generate a report of the test results.
+    >>> test.report("filename.csv")
+    
     """
 
     ID = STS.TestID.EXCURSIONSVAR
@@ -1538,10 +1803,11 @@ class Multiple(STS):
     """spy800-22 Multiple Test class
 
     This is a wrapper that runs multiple tests sequentially.
+    Note that you cannot access the local attributes of each test.
 
     Examples
     --------
-    Create instance. You can set various options here.
+    First, create an instance. You can set various options here.
     >>> test = Multiple(seq_len=1000000, seq_num=1000)
 
     Next, read the bits from the file. It supports several file formats.
