@@ -141,9 +141,8 @@ class BlockFrequencyTest(STS):
         if init:
             super().__init__(seq_len, seq_num, proc_num, ig_err)
         if seq_len < blk_len:
-            msg = ("Sequence length must be at least {} bits."
-                .format(blk_len))
-            raise InvalidSettingError(msg)
+            msg = "Block length must be smaller than sequence length."
+            raise InvalidSettingError(self.ID, msg)
         self.__blk_len = blk_len
         self.__blk_num = seq_len // blk_len
 
@@ -248,7 +247,7 @@ class RunsTest(STS):
         pi = np.count_nonzero(bits) / bits.size
         if abs(pi-0.5) > 2/sqrt(bits.size):
             msg = "Estimator criteria not met. (Pi = {})".format(pi)
-            raise StatisticalError(msg)
+            raise StatisticalError(self.ID, msg)
         run = np.count_nonzero(np.diff(bits))
         p_value = erfc(
             abs(run-2*bits.size*pi*(1-pi)) / (2*pi*(1-pi)*sqrt(2*bits.size)))
@@ -305,7 +304,7 @@ class LongestRunOfOnesTest(STS):
             super().__init__(seq_len, seq_num, proc_num, ig_err)
         if seq_len < 128:
             msg = "Sequence length must be at least 128 bits."
-            raise InvalidSettingError(msg)
+            raise InvalidSettingError(self.ID, msg)
         if seq_len < 6272:
             self.__blk_len = 8
             self.__v = np.arange(1, 5)
@@ -416,9 +415,9 @@ class BinaryMatrixRankTest(STS):
         self.__m, self.__q = 32, 32
         self.__mat_num = seq_len // (self.__m * self.__q)
         if self.__mat_num == 0:
-            msg = ("Sequence length must be at least {} bits."
-                .format(self.__m * self.__q))
-            raise InvalidSettingError(msg)
+            msg = "Sequence length must be at least {} bits.".format(
+                self.__m * self.__q)
+            raise InvalidSettingError(self.ID, msg)
         self.__prob = np.zeros(3)
         for i, r in enumerate([self.__m, self.__m-1]):
             j = np.arange(r, dtype=float)
@@ -431,8 +430,7 @@ class BinaryMatrixRankTest(STS):
     @property
     def param(self) -> dict:
         """Return the local parameters for each test as a dictionary."""
-        return {'Matrix shape M': self.__m,
-                'Matrix shape Q': self.__q,
+        return {'Matrix shape': np.array([self.__m, self.__q]),
                 'Number of matrices': self.__mat_num,
                 'Criteria probability': self.__prob}
         
@@ -625,16 +623,16 @@ class NonOverlappingTemplateMatchingTest(STS):
         tpl_path = "spy800_22/_templates/tpl{}.npy".format(tpl_len)
         if tpl_len < 2 or tpl_len > 16:
             msg = "Template length must be between 2 and 16."
-            raise InvalidSettingError(msg)
+            raise InvalidSettingError(self.ID, msg)
         elif not os.path.isfile(tpl_path):
             msg = "Template file {} is not found.".format(tpl_len)
-            raise InvalidSettingError(msg)
+            raise InvalidSettingError(self.ID, msg)
         self.__blk_num = 8
         self.__blk_len = seq_len // self.__blk_num
         if self.__blk_len <= tpl_len + 1:
-            msg = ("Sequence length must be at least {} bits."
-                .format((tpl_len+2)*self.__blk_num))
-            raise InvalidSettingError(msg)
+            msg = "Sequence length must be at least "\
+                "(Template_length + 2) x 8 bits."
+            raise InvalidSettingError(self.ID, msg)
         self.__mean = (self.__blk_len - tpl_len + 1) / 2**tpl_len
         self.__var = self.__blk_len*(1/2**tpl_len - (2*tpl_len-1)/2**(2*tpl_len))
         self.__tpl = np.load(tpl_path)
@@ -741,14 +739,14 @@ class OverlappingTemplateMatchingTest(STS):
             super().__init__(seq_len, seq_num, proc_num, ig_err)
         if tpl_len < 2:
             msg = "Template length must be at least 2 bits."
-            raise InvalidSettingError(msg)
+            raise InvalidSettingError(self.ID, msg)
         self.__k = 5
         self.__blk_len = 1032
         self.__blk_num = seq_len // self.__blk_len
         if self.__blk_num < 1:
-            msg = ("Sequence length must be at least {} bits."
-                .format(self.__blk_len))
-            raise InvalidSettingError(msg)
+            msg = "Sequence length must be at least {} bits.".format(
+                self.__blk_len)
+            raise InvalidSettingError(self.ID, msg)
         self.__eta = ((self.__blk_len - tpl_len + 1) / 2**tpl_len) / 2
         self.__pi = np.zeros(self.__k+1)
         self.__pi[0] = exp(-self.__eta)
@@ -860,7 +858,7 @@ class MaurersUniversalStatisticalTest(STS):
                 self.__blk_len += 1
         if self.__blk_len < 6:
             msg = "Sequence length must be at least {} bits.".format(th[0])
-            raise InvalidSettingError(msg)
+            raise InvalidSettingError(self.ID, msg)
         var = [0, 0, 0, 0, 0, 0, 2.954, 3.125, 3.238, 3.311,
                3.356, 3.384, 3.401, 3.410, 3.416, 3.419, 3.421]
         exp_val = [0, 0, 0, 0, 0, 0, 5.2177052, 6.1962507, 7.1836656,
@@ -970,9 +968,8 @@ class LinearComplexityTest(STS):
         if init:
             super().__init__(seq_len, seq_num, proc_num, ig_err)
         if seq_len < blk_len:
-            msg = ("Sequence length must be at least {} bits."
-                .format(blk_len))
-            raise InvalidSettingError(msg)
+            msg = "Block length must be smaller than sequence length."
+            raise InvalidSettingError(self.ID, msg)
         self.__blk_len = blk_len
         self.__blk_num = seq_len // blk_len
         self.__mu = (
@@ -1087,9 +1084,8 @@ class SerialTest(STS):
         if init:
             super().__init__(seq_len, seq_num, proc_num, ig_err)
         if seq_len < blk_len:
-            msg = ("Sequence length must be at least {} bits."
-                .format(blk_len))
-            raise InvalidSettingError(msg)
+            msg = "Block length must be smaller than sequence length."
+            raise InvalidSettingError(self.ID, msg)
         self.__blk_len = blk_len
     
     @property
@@ -1189,8 +1185,8 @@ class ApproximateEntropyTest(STS):
             super().__init__(seq_len, seq_num, proc_num, ig_err)
         ref = 2**(blk_len+5)
         if seq_len < ref:
-            msg = "Sequence length must be at least {} bits.".format(ref)
-            raise InvalidSettingError(msg)
+            msg = "Sequence length must be at least 2^(Block_length + 5) bits."
+            raise InvalidSettingError(self.ID, msg)
         self.__blk_len = blk_len
     
     @property
@@ -1420,7 +1416,7 @@ class RandomExcursionsTest(STS):
         cycle = idx.size - 1
         if cycle > self.__up_lim or cycle < self.__low_lim:
             msg = "Number of cycles is out of expected range."
-            raise StatisticalError(msg)
+            raise StatisticalError(self.ID, msg)
         hist = np.zeros((cycle, self.__stat.size), dtype=int)
         freq = np.zeros((6, self.__stat.size), dtype=int)
         for i in range(cycle):
@@ -1524,7 +1520,7 @@ class RandomExcursionsVariantTest(STS):
         cycle = idx.size - 1
         if cycle < self.__low_lim:
             msg = "Number of cycles is out of expected range."
-            raise StatisticalError(msg)
+            raise StatisticalError(self.ID, msg)
         xi = np.zeros_like(self.__stat)
         for i in range(self.__stat.size):
             xi[i] = np.count_nonzero(s==self.__stat[i])
