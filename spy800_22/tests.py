@@ -1447,8 +1447,6 @@ class RandomExcursionsVariantTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
