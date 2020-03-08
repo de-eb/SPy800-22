@@ -13,11 +13,6 @@ https://nvlpubs.nist.gov/nistpubs/legacy/sp/nistspecialpublication800-22r1a.pdf
 NIST's official implementation:
 https://csrc.nist.gov/projects/random-bit-generation/documentation-and-software
 
-Notes
------
-    Test results may differ from those of the NIST's official implementation.
-    This is due to all array operations being optimized for Python.
-
 """
 
 import os
