@@ -37,8 +37,6 @@ class FrequencyTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
@@ -76,12 +74,13 @@ class FrequencyTest(STS):
         
         Returns
         -------
-        p_value : `float`
-            Test result.
-        zeros : `int`
-            Number of occurrences of 0s for the entire sequence.
-        ones : `int`
-            Number of occurrences of 1s for the entire sequence.
+        `dict` Name and data pairs.
+
+            {
+                'p-value': float Test result.
+                'zeros'  : int Number of occurrences of 0.
+                'ones'   : int Number of occurrences of 1.
+            }
         
         """
         ones = np.count_nonzero(bits)
@@ -110,8 +109,6 @@ class BlockFrequencyTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
@@ -162,10 +159,12 @@ class BlockFrequencyTest(STS):
         
         Returns
         -------
-        p_value : `float`
-            Test result.
-        chi_square : `float`
-            Computed statistic.
+        `dict` Name and data pairs.
+
+            {
+                'p-value': float Test result.
+                'chi^2'  : float Computed statistic.
+            }
         
         """
         bits = np.resize(bits, (self.__blk_num, self.__blk_len))
@@ -195,8 +194,6 @@ class RunsTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
@@ -236,12 +233,13 @@ class RunsTest(STS):
         
         Returns
         -------
-        p_value : `float`
-            Test result.
-        pi : `float`
-            Estimator criteria.
-        run : `int`
-            Total of "Run"s.
+        `dict` Name and data pairs.
+
+            {
+                'p-value': float Test result.
+                'pi'     : float Estimator criteria.
+                'run'    : int Total of Runs.
+            }
         
         """
         pi = np.count_nonzero(bits) / bits.size
@@ -274,8 +272,6 @@ class LongestRunOfOnesTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
@@ -327,7 +323,7 @@ class LongestRunOfOnesTest(STS):
         return {'Block length': self.__blk_len,
                 'Number of Blocks': self.__blk_num}
         
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluate the longest "Run" of 1s for each M-bit subsequence.
         
         "Run" is a continuation of the same bit.
@@ -339,12 +335,13 @@ class LongestRunOfOnesTest(STS):
         
         Returns
         -------
-        p_value : `float`
-            Test result.
-        chi_square : `float`
-            Computed statistic.
-        hist : `1d-ndarray`
-            Histogram of the longest "Run" in each block.
+        `dict` Name and data pairs.
+
+            {
+                'p-value': float Test result.
+                'chi^2'  : float Computed statistic.
+                'hist'   : ndarray Histogram of the longest Run in each block.
+            }
         
         """
         bits = np.pad(
@@ -384,8 +381,6 @@ class BinaryMatrixRankTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
@@ -434,7 +429,7 @@ class BinaryMatrixRankTest(STS):
                 'Number of matrices': self.__mat_num,
                 'Criteria probability': self.__prob}
         
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluate the Rank of disjoint sub-matrices of the entire sequence.
 
         Parameters
@@ -444,13 +439,13 @@ class BinaryMatrixRankTest(STS):
         
         Returns
         -------
-        p_value : `float`
-            Test result.
-        chi_square : `float`
-            Computed statistic.
-        freq : `1d-ndarray`
-            Number of occurrences of M and M-1 and other Ranks,
-            where M is the length of a matrix row or column.
+        `dict` Name and data pairs.
+
+            {
+                'p-value': float Test result.
+                'chi^2'  : float Computed statistic.
+                'freq'   : ndarray Number of occurrences of Ranks.
+            }
         
         """
         hist = np.zeros(3, dtype=int)
@@ -466,7 +461,7 @@ class BinaryMatrixRankTest(STS):
         p_value = exp(-chi_square/2)
         return {'p-value': p_value, 'chi^2': chi_square, 'hist': hist}
     
-    def __matrix_rank(self, mat):
+    def __matrix_rank(self, mat) -> int:
         """Calculate Rank by elementary row operations."""
         i, j, k = 0, 0, 0
         for _ in range(mat.shape[1]):
@@ -506,8 +501,6 @@ class DiscreteFourierTransformTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
@@ -553,12 +546,13 @@ class DiscreteFourierTransformTest(STS):
         
         Returns
         -------
-        p_value : `float`
-            Test result.
-        percentile : `float`
-            Percentage of DFT peaks below threshold.
-        count : `int`
-            Number of DFT peaks below threshold.
+        `dict` Name and data pairs.
+
+            {
+                'p-value'   : float Test result.
+                'percentile': float Percentage of DFT peaks below threshold.
+                'count'     : int Number of DFT peaks below threshold.
+            }
         
         """
         bits = 2*bits - 1
@@ -590,8 +584,6 @@ class NonOverlappingTemplateMatchingTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
@@ -645,7 +637,7 @@ class NonOverlappingTemplateMatchingTest(STS):
                 'Number of blocks': self.__blk_num,
                 'Lambda (theoretical mean of matches)': self.__mean}
     
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluates the number of occurrences of templates 
         (unique m-bit patterns) for each M-bit subsequence.
 
@@ -656,12 +648,13 @@ class NonOverlappingTemplateMatchingTest(STS):
         
         Returns
         -------
-        p_value : `1d-ndarray float`
-            Test results for each template.
-        chi_square : `1d-ndarray float`
-            Computed statistics for each template.
-        match : `2d-ndarray int`
-            Number of matches in each block for each template.
+        `dict` Name and data pairs.
+
+            {
+                'p-value': ndarray Test results of each template.
+                'chi^2'  : ndarray Computed statistics of each template.
+                'match'  : ndarray Number of template matches in each block.
+            }
         
         """
         bits = np.resize(
@@ -707,8 +700,6 @@ class OverlappingTemplateMatchingTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
@@ -767,7 +758,7 @@ class OverlappingTemplateMatchingTest(STS):
                 'Number of blocks': self.__blk_num,
                 'Pi (theoretical probabilities of matches)': self.__pi}
     
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluates the number of occurrences of a template 
         (duplicate m-bit pattern) for each M-bit subsequence.
 
@@ -778,12 +769,13 @@ class OverlappingTemplateMatchingTest(STS):
         
         Returns
         -------
-        p_value : `float`
-            Test result.
-        chi_square : `float`
-            Computed statistic.
-        hist : `1d-ndarray`
-            Histogram of the number of matches in each block.
+        `dict` Name and data pairs.
+
+            {
+                'p-value': float Test result.
+                'chi^2'  : float Computed statistic.
+                'hist'   : ndarray Histogram of the number of template matches.
+            }
         
         """
         bits = np.resize(bits, (self.__blk_num,self.__blk_len)).astype('uint8')
@@ -822,8 +814,6 @@ class MaurersUniversalStatisticalTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
@@ -880,7 +870,7 @@ class MaurersUniversalStatisticalTest(STS):
                 'Theoretical expected value': self.__exp_val,
                 'Theoretical standard deviation': self.__sigma}
     
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluate the distance between L-bit patterns repeatedly observed.
 
         Parameters
@@ -890,10 +880,12 @@ class MaurersUniversalStatisticalTest(STS):
         
         Returns
         -------
-        p_value : `float`
-            Test result.
-        phi : `float`
-            Computed statistic.
+        `dict` Name and data pairs.
+
+            {
+                'p-value': float Test result.
+                'chi^2'  : float Computed statistic.
+            }
         
         """
         t = np.zeros(2**self.__blk_len)
@@ -937,8 +929,6 @@ class LinearComplexityTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
@@ -984,7 +974,7 @@ class LinearComplexityTest(STS):
                 'Number of blocks': self.__blk_num,
                 'Theoretical mean of linear complexity': self.__mu}
     
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluate the length of the linear feedback shift register (LFSR).
 
         Parameters
@@ -994,12 +984,13 @@ class LinearComplexityTest(STS):
         
         Returns
         -------
-        p_value : `float`
-            Test result.
-        chi_square : `float`
-            Computed statistic.
-        hist : `1d-ndarray int`
-            Histogram of T.
+        `dict` Name and data pairs.
+
+            {
+                'p-value': float Test result.
+                'chi^2'  : float Computed statistic.
+                'hist'   : ndarray Histogram of T.
+            }
         
         """
         bits = np.resize(bits, (self.__blk_num, self.__blk_len))
@@ -1014,7 +1005,7 @@ class LinearComplexityTest(STS):
         p_value = gammaincc(6/2.0 , chi_square/2.0)
         return {'p-value': p_value, 'chi^2': chi_square, 'hist': hist}
     
-    def __bma(self, bits):
+    def __bma(self, bits) -> int:
         """Berlekamp Massey Algorithm."""
         c, b = np.zeros(bits.size, dtype=int), np.zeros(bits.size, dtype=int)
         c[0], b[0] = 1, 1
@@ -1053,8 +1044,6 @@ class SerialTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
@@ -1093,7 +1082,7 @@ class SerialTest(STS):
         """Return the local parameters for each test as a dictionary."""
         return {'Block length': self.__blk_len}
     
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluate the frequency of all possible overlapping m-bit patterns.
 
         Parameters
@@ -1103,10 +1092,12 @@ class SerialTest(STS):
         
         Returns
         -------
-        p_value : `1d-ndarray float`
-            Test results.
-        psi : `1d-ndarray float`
-            Computed statistics.
+        `dict` Name and data pairs.
+
+            {
+                'p-value': ndarray Test results.
+                'psi'  : ndarray Computed statistics.
+            }
         
         """
         psi = np.zeros(3)
@@ -1118,7 +1109,7 @@ class SerialTest(STS):
             2**(self.__blk_len-2)/2.0, (psi[0]-2*psi[1]+psi[2])/2.0)
         return {'p-value': p_value, 'psi': psi}
     
-    def __psi_square(self, x, m):
+    def __psi_square(self, x, m) -> float:
         """Compute statistics."""
         p, k = np.zeros(2**(m+1)-1), np.ones(x.size, dtype=int)
         j = np.arange(x.size)
@@ -1153,8 +1144,6 @@ class ApproximateEntropyTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
@@ -1194,7 +1183,7 @@ class ApproximateEntropyTest(STS):
         """Return the local parameters for each test as a dictionary."""
         return {'Block length': self.__blk_len}
     
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluate the frequency of all possible overlapping m-bit patterns.
 
         Parameters
@@ -1204,12 +1193,13 @@ class ApproximateEntropyTest(STS):
         
         Returns
         -------
-        p_value : `float`
-            Test result.
-        chi_square : `float`
-            Computed statistic.
-        apen : `float`
-            Approximate entropy.
+        `dict` Name and data pairs.
+
+            {
+                'p-value': float Test result.
+                'chi^2'  : float Computed statistic.
+                'apen'   : float Approximate entropy.
+            }
         
         """
         apen = (self.__phi_m(bits, self.__blk_len)
@@ -1218,7 +1208,7 @@ class ApproximateEntropyTest(STS):
         p_value = gammaincc(2**(self.__blk_len-1), chi_square/2.0)
         return {'p-value': p_value, 'chi^2': chi_square, 'entropy': apen}
     
-    def __phi_m(self, x, m):
+    def __phi_m(self, x, m) -> float:
         """Compute statistics."""
         p, k = np.zeros(2**(m+1)-1), np.ones(x.size, dtype=int)
         j = np.arange(x.size)
@@ -1253,8 +1243,6 @@ class CumulativeSumsTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
@@ -1282,7 +1270,7 @@ class CumulativeSumsTest(STS):
         if init:
             super().__init__(seq_len, seq_num, proc_num, ig_err)
 
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluate the maximal excursion (from `0`) of the random walk.
         
         Random walk is defined by the cumulative sum
@@ -1295,10 +1283,12 @@ class CumulativeSumsTest(STS):
         
         Returns
         -------
-        p_value : `1d-ndarray float`
-            Test results for forward and backward random walk.
-        sums : `1d-ndarray int`
-            The largest absolute values of partial sums.
+        `dict` Name and data pairs.
+
+            {
+                'p-value': ndarray Test results for forward and backward.
+                'sums'   : ndarray The largest absolute values of partial sums.
+            }
         
         """
         p_value = np.zeros(2)
@@ -1312,7 +1302,7 @@ class CumulativeSumsTest(STS):
                         + self.__sigma(bits.size, sums[1], term=True))
         return {'p-value': p_value, 'cusums': sums}
     
-    def __sigma(self, n, z, term=False):
+    def __sigma(self, n, z, term=False) -> float:
         a, b, c = 1, 1, -1
         if term:
             a, b, c = -3, 3, 1
@@ -1343,8 +1333,6 @@ class RandomExcursionsTest(STS):
     ----------
     ID : `Enum`
         A unique identifier for the class.
-    NAME : `str`
-        A unique test name for the class.
     
     """
 
@@ -1389,7 +1377,7 @@ class RandomExcursionsTest(STS):
         return {'Upper limit of cycles': self.__up_lim,
                 'Lower limit of cycles': self.__low_lim}
 
-    def func(self, bits) -> tuple:
+    def func(self, bits) -> dict:
         """Evaluate the number of cycles having K visits in a random walk.
         
         Random walk is defined by the cumulative sum
@@ -1402,12 +1390,13 @@ class RandomExcursionsTest(STS):
         
         Returns
         -------
-        p_value : `1d-ndarray float`
-            Test results for each state.
-        chi_square : `1d-ndarray float`
-            Computed statistics for each state.
-        cycle : `int`
-            Number of cycles.
+        `dict` Name and data pairs.
+
+            {
+                'p-value': ndarray Test results for each state.
+                'chi^2'  : ndarray Computed statistic for each state.
+                'cycle'  : Number of cycles.
+            }
         
         """
         bits = 2*bits - 1
@@ -1508,10 +1497,12 @@ class RandomExcursionsVariantTest(STS):
         
         Returns
         -------
-        p_value : `1d-ndarray float`
-            Test results for each state.
-        xi : `1d-ndarray float`
-            Number of occurrences of each state in the entire random walk.
+        `dict` Name and data pairs.
+
+            {
+                'p-value': ndarray Test result for each state.
+                'xi'     : Number of occurrences of each state.
+            }
         
         """
         bits = 2*bits - 1
