@@ -91,7 +91,7 @@ class STS:
         BIGENDIAN = auto()
         LITTLEENDIAN = auto()
 
-    ALPHA = 0.01  # Significance level
+    ALPHA = 0.01  # Significance level for p-value
     UNIF_LIM = 0.0001  # Significance level for uniformity (P-valueT)
 
     def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
@@ -126,7 +126,8 @@ class STS:
         self.__start_time = None
         self.__end_time = None
         self.__is_ready = False
-        self.__is_finished = False
+        self.__is_tested = False
+        self.__is_assessed = False
         self.__results = None
         np.set_printoptions(linewidth=100000)
     
@@ -134,16 +135,6 @@ class STS:
     def sequence(self):
         """`ndarray uint`: Binary sequence."""
         return self.__sequence
-    
-    @property
-    def is_ready(self):
-        """`bool`: `True` if the test is executable, `False` otherwise."""
-        return self.__is_ready
-    
-    @property
-    def is_finished(self):
-        """`bool`: `True` if test is complete, `False` otherwise."""
-        return self.__is_finished
     
     @property
     def results(self):
@@ -255,8 +246,11 @@ class STS:
 
         """
         if not self.__is_ready:
-            msg = "Cannot start test because the bits have not been read."
-            raise InvalidProceduralError(msg)
+            print("No bits have been loaded. Unable to start test.")
+            return
+        if self.__is_tested:
+            print("Test is over.")
+            return
 
         self.__start_time = datetime.now()
         print("Test in progress. ", end="")
@@ -276,7 +270,7 @@ class STS:
         self.__sort_results(results)
         print("\rTest completed.{}".format(" "*55))
         self.__end_time = datetime.now()
-        self.__is_finished = True
+        self.__is_tested = True
     
     def test_wrapper(self, args: list) -> list:
         """Wrapper function for parallel testing.
@@ -337,9 +331,12 @@ class STS:
     def assess(self) -> None:
         """
         """
-        if not self.__is_finished:
-            msg = "Test not completed. Unable to start assessment."
-            raise InvalidProceduralError(msg)
+        if not self.__is_tested:
+            print("Test not completed. Unable to start assessment.")
+            return
+        if self.__is_assessed:
+            print("Assessment is over.")
+            return
         key = self.__results.keys()
         for k in key:
             res0 = self.__calc_proportion(self.__results[k]['p-value'])
@@ -389,7 +386,7 @@ class STS:
         unif = gammaincc(9/2, chi_square/2)
         return unif, hist
     
-    def save_report(self, file_path: str) -> None:
+    def report(self, file_path: str) -> None:
         """Generate and save CSV of test results.
 
         Note that if a file with the same path already exists,
@@ -508,9 +505,6 @@ class BitShortageError(STSError):
 
 class IllegalBitError(STSError):
     """Raised when data different from user setting format is read."""
-
-class InvalidProceduralError(STSError):
-    """Raised when methods are called in a incorrect order."""
 
 class StatisticalError(STSError):
     """Raised when significantly biased statistics are calculated."""
