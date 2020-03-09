@@ -35,7 +35,7 @@ import multiprocessing as mp
 import os
 from datetime import datetime
 from enum import Enum, IntEnum, auto
-from math import sqrt
+from math import ceil, sqrt
 
 import numpy as np
 from scipy.special import gammaincc
@@ -156,6 +156,8 @@ class STS:
         self.__is_tested = False
         self.__is_assessed = False
         self.__results = None
+        if fmt == STS.ReadAs.BIGENDIAN or fmt == STS.ReadAs.LITTLEENDIAN:
+            self.__seq_bytes = ceil(self.__sequence_len / 8)
         self.__fmt = fmt
         self.__total_sequence_size = self.__sequence_num*self.__sequence_len
         np.set_printoptions(linewidth=100000)
@@ -252,17 +254,19 @@ class STS:
     def __check_format(self) -> None:
         """Check the format of the bits."""
         if self.__fmt == STS.ReadAs.ASCII:
-            f = open(self.__file, mode='r')
             zero, one, end = "0", "1", ""
+            f = open(self.__file, mode='r')
         elif self.__fmt == STS.ReadAs.BYTE:
-            f = open(self.__file, mode='rb')
             zero, one, end = b'\x00', b'\x01', b''
+            f = open(self.__file, mode='rb')
         for n, byte in enumerate(iter(lambda:f.read(1), end)):
             if n >= self.__total_sequence_size:
+                f.close()
                 return
             if byte != zero and byte != one:
                 msg = "Data with a different format was detected.\n"\
                     "Detected: \"{}\", Position: {}".format(byte, n)
+                f.close()
                 raise IllegalBitError(msg)
     
     def __read_bits_in_ascii_format(self, file_path: str) -> None:
@@ -306,6 +310,39 @@ class STS:
                     else:  # Big-endian
                         self.__sequence[n] = (bits >> (7-i)) & 1
                     n += 1
+    
+    def load_sequence(self, seq_id: int) -> np.ndarray:
+        """Read data and convert it to a binary sequence."""
+        if self.__fmt == STS.ReadAs.ASCII or self.__fmt == STS.ReadAs.BYTE:
+            return self.__byte_to_1bit(seq_id)
+        elif (self.__fmt == STS.ReadAs.BIGENDIAN
+                or self.__fmt == STS.ReadAs.LITTLEENDIAN):
+            return self.__byte_to_8bits(seq_id)
+
+    def __byte_to_1bit(self, seq_id: int) -> np.ndarray:
+        """Read data and convert it to a binary sequence."""
+        if self.__fmt == STS.ReadAs.ASCII:
+            f = open(self.__file, mode='r')
+        elif self.__fmt == STS.ReadAs.BYTE:
+            f = open(self.__file, mode='rb')
+        f.seek(seq_id*self.__sequence_len)
+        seq = f.read(self.__sequence_len)
+        f.close()
+        return np.array(list(seq), dtype='int8')
+    
+    def __byte_to_8bits(self, seq_id: int) -> np.ndarray:
+        """Read data and convert it to a binary sequence."""
+        seek, head_ext = divmod(seq_id*self.__sequence_len, 8)
+        tail_ext = 8*self.__seq_bytes - (head_ext + self.__sequence_len)
+        with open(self.__file, mode='rb') as f:
+            f.seek(seek)
+            seq = f.read(self.__seq_bytes)
+        seq = np.array(list(seq), dtype='uint8')
+        if self.__fmt == STS.ReadAs.BIGENDIAN:
+            seq = np.unpackbits(seq)
+        elif self.__fmt == STS.ReadAs.LITTLEENDIAN:
+            seq = np.unpackbits(seq, bitorder='little')
+        return seq[head_ext:-tail_ext]
     
     def run(self) -> None:
         """Run the test."""
