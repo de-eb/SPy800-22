@@ -74,8 +74,8 @@ class FrequencyTest(STS):
 
     ID = STS.TestID.FREQUENCY
 
-    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
-            ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs, seq_len: int, seq_num: int,
+            proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
         """Set the test parameters.
 
         Parameters
@@ -94,7 +94,7 @@ class FrequencyTest(STS):
         
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num, proc_num, ig_err)
 
     def func(self, bits) -> dict:
         """Evaluate the uniformity of 0s and 1s for the entire sequence.

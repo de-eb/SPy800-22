@@ -121,8 +121,8 @@ class STS:
     ALPHA = 0.01  # Significance level for p-value
     UNIF_LIM = 0.0001  # Significance level for uniformity (P-valueT)
 
-    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
-            ig_err: bool =False) -> None:
+    def __init__(self, file: str, fmt: Enum, seq_len: int, seq_num: int,
+            proc_num: int =1, ig_err: bool =False) -> None:
         """Set the test parameters.
 
         Parameters
@@ -149,14 +149,18 @@ class STS:
             self.__process_num = mp.cpu_count()
         self.__ig_err = ig_err
         self.__tests = [self]
-        self.__input_path = None
+        self.__file = file
         self.__start_time = None
         self.__end_time = None
         self.__is_ready = False
         self.__is_tested = False
         self.__is_assessed = False
         self.__results = None
+        self.__fmt = fmt
+        self.__total_sequence_size = self.__sequence_num*self.__sequence_len
         np.set_printoptions(linewidth=100000)
+
+        self.__check_file()
     
     @property
     def sequence(self):
@@ -217,11 +221,49 @@ class STS:
             msg = "File input mode must be Enum. -> instance.READ_AS.xxx"
             raise InvalidSettingError(msg)
 
-        self.__input_path = file_path
+        self.__file = file_path
         self.__sequence = np.resize(
             self.__sequence, (self.__sequence_num, self.__sequence_len))
         self.__is_ready = True
         print("\r{} bits loaded.".format(self.__sequence.size))
+    
+    def __check_file(self):
+        """Check whether a file is testable."""
+        print("Checking file...", end="")
+        if not os.path.isfile(self.__file):
+            msg = "File \"{}\" is not found.".format(self.__file)
+            raise InvalidSettingError(msg)
+        self.__check_bits_num()
+        if self.__fmt == STS.ReadAs.ASCII or self.__fmt == STS.ReadAs.BYTE:
+            self.__check_format()
+        print("\rThe file is testable.")
+    
+    def __check_bits_num(self) -> None:
+        """Check the number of bits in the file."""
+        total_bits = os.path.getsize(self.__file)
+        if (self.__fmt == STS.ReadAs.BIGENDIAN
+                or self.__fmt == STS.ReadAs.LITTLEENDIAN):
+            total_bits *= 8
+        if total_bits < self.__total_sequence_size:
+            msg = "Set value ({} x {}) exceeds the bits read ({}).".format(
+                self.__sequence_num, self.__sequence_len, total_bits)
+            raise BitShortageError(msg)
+    
+    def __check_format(self) -> None:
+        """Check the format of the bits."""
+        if self.__fmt == STS.ReadAs.ASCII:
+            f = open(self.__file, mode='r')
+            zero, one, end = "0", "1", ""
+        elif self.__fmt == STS.ReadAs.BYTE:
+            f = open(self.__file, mode='rb')
+            zero, one, end = b'\x00', b'\x01', b''
+        for n, byte in enumerate(iter(lambda:f.read(1), end)):
+            if n >= self.__total_sequence_size:
+                return
+            if byte != zero and byte != one:
+                msg = "Data with a different format was detected.\n"\
+                    "Detected: \"{}\", Position: {}".format(byte, n)
+                raise IllegalBitError(msg)
     
     def __read_bits_in_ascii_format(self, file_path: str) -> None:
         """Read data and convert it to a binary sequence."""
