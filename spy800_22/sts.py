@@ -342,13 +342,13 @@ class STS:
             seq = np.unpackbits(seq)
         elif self.__fmt == STS.ReadAs.LITTLEENDIAN:
             seq = np.unpackbits(seq, bitorder='little')
-        return seq[head_ext:-tail_ext]
+        return seq[head_ext:-tail_ext].astype('int8')
     
     def run(self) -> None:
         """Run the test."""
-        if not self.__is_ready:
-            print("No bits have been loaded. Unable to start test.")
-            return
+        # if not self.__is_ready:
+        #     print("No bits have been loaded. Unable to start test.")
+        #     return
         if self.__is_tested:
             print("Test is over.")
             return
@@ -393,7 +393,9 @@ class STS:
         test, seq_id = args
         result = [test.ID, seq_id, None, None]
         try:
-            res = test.func(self.__sequence[seq_id])
+            seq = self.load_sequence(seq_id)
+            res = test.func(seq)
+            # res = test.func(self.__sequence[seq_id])
         except StatisticalError as err:
             result[2] = "StatisticalError"
             if not self.__ig_err:
