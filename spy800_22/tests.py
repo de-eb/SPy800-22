@@ -55,46 +55,49 @@ class FrequencyTest(STS):
     
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = FrequencyTest(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = FrequencyTest(
+            file="file.txt",
+            fmt=FrequencyTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.FREQUENCY
 
-    def __init__(self, file: str, fmt: STS.ReadAs, seq_len: int, seq_num: int,
-            proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs,
+            seq_len: int, seq_num: int, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
         
         """
         if init:
-            super().__init__(file, fmt, seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
 
     def func(self, bits) -> dict:
         """Evaluate the uniformity of 0s and 1s for the entire sequence.
@@ -144,48 +147,52 @@ class BlockFrequencyTest(STS):
     
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = BlockFrequencyTest(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = BlockFrequencyTest(
+            file="file.txt",
+            fmt=BlockFrequencyTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.BLOCKFREQUENCY
 
-    def __init__(self, seq_len: int, seq_num: int, blk_len: int =128,
-            proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs, seq_len: int,
+            seq_num: int, blk_len: int =128, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
+        
         blk_len : `int`, optional
             Bit length of each block.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
 
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
         if seq_len < blk_len:
             msg = "Block length must be smaller than sequence length."
             raise InvalidSettingError(msg, self.ID)
@@ -246,46 +253,49 @@ class RunsTest(STS):
     
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = RunsTest(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = RunsTest(
+            file="file.txt",
+            fmt=RunsTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.RUNS
 
-    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
-            ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs, 
+            seq_len: int, seq_num: int, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
 
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
         
     def func(self, bits) -> dict:
         """Evaluate the total number of "Run"s for the entire sequence.
@@ -341,46 +351,49 @@ class LongestRunOfOnesTest(STS):
     
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = LongestRunOfOnesTest(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = LongestRunOfOnesTest(
+            file="file.txt",
+            fmt=LongestRunOfOnesTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.LONGESTRUN
 
-    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
-            ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs,
+            seq_len: int, seq_num: int, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
 
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
         if seq_len < 128:
             msg = "Sequence length must be at least 128 bits."
             raise InvalidSettingError(msg, self.ID)
@@ -467,46 +480,49 @@ class BinaryMatrixRankTest(STS):
     
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = BinaryMatrixRankTest(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = BinaryMatrixRankTest(
+            file="file.txt",
+            fmt=BinaryMatrixRankTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.RANK
 
-    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
-            ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs,
+            seq_len: int, seq_num: int, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
 
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
         self.__m, self.__q = 32, 32
         self.__mat_num = seq_len // (self.__m * self.__q)
         if self.__mat_num == 0:
@@ -604,46 +620,49 @@ class DiscreteFourierTransformTest(STS):
     
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = DiscreteFourierTransformTest(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = DiscreteFourierTransformTest(
+            file="file.txt",
+            fmt=DiscreteFourierTransformTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.DFT
 
-    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
-            ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs,
+            seq_len: int, seq_num: int, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
 
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
         self.__threshold = sqrt(log(1/0.05)*seq_len)
         self.__ref = 0.95 * seq_len / 2
 
@@ -704,48 +723,52 @@ class NonOverlappingTemplateMatchingTest(STS):
     
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = NonOverlappingTemplateMatchingTest(seq_len=100000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = NonOverlappingTemplateMatchingTest(
+            file="file.txt",
+            fmt=NonOverlappingTemplateMatchingTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.NONOVERLAPPING
 
-    def __init__(self, seq_len: int, seq_num: int, tpl_len: int =9,
-            proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs, seq_len: int,
+            seq_num: int, tpl_len: int =9, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
+        
         tpl_len : `int`, optional
             Bit length of each template. Can be set from 2 to 16.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
 
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
         tpl_path = "spy800_22/_templates/tpl{}.npy".format(tpl_len)
         if tpl_len < 2 or tpl_len > 16:
             msg = "Template length must be between 2 and 16."
@@ -837,48 +860,52 @@ class OverlappingTemplateMatchingTest(STS):
     
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = OverlappingTemplateMatchingTest(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = OverlappingTemplateMatchingTest(
+            file="file.txt",
+            fmt=OverlappingTemplateMatchingTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.OVERLAPPING
 
-    def __init__(self, seq_len: int, seq_num: int, tpl_len: int =9,
-            proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs, seq_len: int,
+            seq_num: int, tpl_len: int =9, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
+        
         tpl_len : `int`, optional
             Bit length of each template.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
 
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
         if tpl_len < 2:
             msg = "Template length must be at least 2 bits."
             raise InvalidSettingError(msg, self.ID)
@@ -968,46 +995,49 @@ class MaurersUniversalStatisticalTest(STS):
     
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = MaurersUniversalStatisticalTest(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = MaurersUniversalStatisticalTest(
+            file="file.txt",
+            fmt=MaurersUniversalStatisticalTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.UNIVERSAL
 
-    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
-            ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs,
+            seq_len: int, seq_num: int, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
 
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
         self.__blk_len = 5
         th = [387840, 904960, 2068480, 4654080, 10342400, 22753280,
               49643520, 107560960, 231669760, 496435200, 1059061760]
@@ -1100,48 +1130,52 @@ class LinearComplexityTest(STS):
     
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = LinearComplexityTest(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = LinearComplexityTest(
+            file="file.txt",
+            fmt=LinearComplexityTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.COMPLEXITY
 
-    def __init__(self, seq_len: int, seq_num: int, blk_len: int =500,
-            proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs, seq_len: int,
+            seq_num: int, blk_len: int =500, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
+        
         blk_len : `int`, optional
             Bit length of each block.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
 
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
         if seq_len < blk_len:
             msg = "Block length must be smaller than sequence length."
             raise InvalidSettingError(msg, self.ID)
@@ -1232,48 +1266,52 @@ class SerialTest(STS):
 
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = SerialTest(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = SerialTest(
+            file="file.txt",
+            fmt=SerialTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.SERIAL
 
-    def __init__(self, seq_len: int, seq_num: int, blk_len: int =16,
-            proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs, seq_len: int,
+            seq_num: int, blk_len: int =16, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
+        
         blk_len : `int`, optional
             Bit length of each block.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
 
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
         if seq_len < blk_len:
             msg = "Block length must be smaller than sequence length."
             raise InvalidSettingError(msg, self.ID)
@@ -1349,48 +1387,52 @@ class ApproximateEntropyTest(STS):
     
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = ApproximateEntropyTest(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = ApproximateEntropyTest(
+            file="file.txt",
+            fmt=ApproximateEntropyTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.ENTROPY
 
-    def __init__(self, seq_len: int, seq_num: int, blk_len: int =10,
-            proc_num: int =1, ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs, seq_len: int,
+            seq_num: int, blk_len: int =10, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
+        
         blk_len : `int`, optional
             Bit length of each block.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
 
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
         ref = 2**(blk_len+5)
         if seq_len < ref:
             msg = "Sequence length must be at least 2^(Block_length + 5) bits."
@@ -1465,46 +1507,49 @@ class CumulativeSumsTest(STS):
     
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = CumulativeSumsTest(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = CumulativeSumsTest(
+            file="file.txt",
+            fmt=CumulativeSumsTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.CUSUM
 
-    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
-            ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs,
+            seq_len: int, seq_num: int, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
         
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
 
     def func(self, bits) -> dict:
         """Evaluate the maximal excursion (from `0`) of the random walk.
@@ -1572,46 +1617,49 @@ class RandomExcursionsTest(STS):
     
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = RandomExcursionsTest(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = RandomExcursionsTest(
+            file="file.txt",
+            fmt=RandomExcursionsTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.EXCURSIONS
 
-    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
-            ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs,
+            seq_len: int, seq_num: int, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
         
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
         self.__pi = np.array(
             [[0.8750000000,  0.8333333333,  0.7500000000,  0.5000000000],
             [0.01562500000, 0.02777777778, 0.06250000000, 0.25000000000],
@@ -1703,46 +1751,49 @@ class RandomExcursionsVariantTest(STS):
     
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = RandomExcursionsVariantTest(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = RandomExcursionsVariantTest(
+            file="file.txt",
+            fmt=RandomExcursionsVariantTest.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
     ID = STS.TestID.EXCURSIONSVAR
 
-    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
-            ig_err: bool =False, init: bool =True) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs, seq_len: int,
+            seq_num: int, init: bool =True):
         """Set the test parameters.
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting data into bits.
+            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each split sequence.
+        
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
+        
         init : `bool`, optional
             If `True`, initialize the super class.
         
         """
         if init:
-            super().__init__(seq_len, seq_num, proc_num, ig_err)
+            super().__init__(file, fmt, seq_len, seq_num)
         self.__stat = np.array([-9,-8,-7,-6,-5,-4,-3,-2,-1,1,2,3,4,5,6,7,8,9])
         self.__low_lim = max(500, 0.005*sqrt(seq_len))
     
@@ -1817,28 +1868,21 @@ class Multiple(STS):
 
     Examples
     --------
-    First, create an instance. You can set various options here.
-    >>> test = Multiple(seq_len=1000000, seq_num=1000)
-
-    Next, read the bits from the file. It supports several file formats.
-    >>> test.load_bits("filename.txt", fmt=test.ReadAs.ASCII)
-
-    Then, run the test.
-    >>> test.run()
-
-    When the test is over, evaluate the results.
-    >>> test.assess()
-
-    Finally, generate a report of the test results.
-    >>> test.report("filename.csv")
+    >>> test = Multiple(
+            file="file.txt",
+            fmt=Multiple.ReadAs.ASCII,
+            seq_len=1000000,
+            seq_num=1000)
+    >>> test.run(proc_num=4, ig_err=True)
+    >>> test.report("file.csv")
     
     """
 
-    def __init__(self, seq_len: int, seq_num: int, proc_num: int =1,
-            choice: list =None, blk_len_blockfrequency: int =128,
-            tpl_len_nonoverlapping: int =9, tpl_len_overlapping: int =9,
-            blk_len_complexity: int =500, blk_len_serial: int =16,
-            blk_len_entropy: int =10, ig_err: bool =False) -> None:
+    def __init__(self, file: str, fmt: STS.ReadAs,
+            seq_len: int, seq_num: int, choice: list =None,
+            blk_len_blockfrequency: int =128, tpl_len_nonoverlapping: int =9,
+            tpl_len_overlapping: int =9, blk_len_complexity: int =500,
+            blk_len_serial: int =16, blk_len_entropy: int =10):
         """Set the test parameters.
 
         Parameters
@@ -1892,7 +1936,7 @@ class Multiple(STS):
             Block length in "Approximate entropy Test".
         
         """
-        super().__init__(seq_len, seq_num, proc_num, ig_err)
+        super().__init__(file, fmt, seq_len, seq_num)
         if choice is not None and not isinstance(choice, list):
             msg = "Test choice must be a list of Enums (Multiple.TestID.xxx)"\
                   " or None."
@@ -1902,44 +1946,48 @@ class Multiple(STS):
 
         tests = []
         if STS.TestID.FREQUENCY in choice:
-            tests.append(FrequencyTest(seq_len, seq_num, init=False))
+            tests.append(FrequencyTest(file, fmt, seq_len, seq_num, init=False))
         if STS.TestID.BLOCKFREQUENCY in choice:
-            tests.append(BlockFrequencyTest(
+            tests.append(BlockFrequencyTest(file, fmt,
                 seq_len, seq_num, blk_len=blk_len_blockfrequency, init=False))
         if STS.TestID.RUNS in choice:
-            tests.append(RunsTest(seq_len, seq_num, init=False))
+            tests.append(RunsTest(file, fmt, seq_len, seq_num, init=False))
         if STS.TestID.LONGESTRUN in choice:
-            tests.append(LongestRunOfOnesTest(seq_len, seq_num, init=False))
+            tests.append(LongestRunOfOnesTest(
+                file, fmt, seq_len, seq_num, init=False))
         if STS.TestID.RANK in choice:
-            tests.append(BinaryMatrixRankTest(seq_len, seq_num, init=False))
+            tests.append(BinaryMatrixRankTest(
+                file, fmt, seq_len, seq_num, init=False))
         if STS.TestID.DFT in choice:
-            tests.append(DiscreteFourierTransformTest(
+            tests.append(DiscreteFourierTransformTest(file, fmt,
                 seq_len, seq_num, init=False))
         if STS.TestID.NONOVERLAPPING in choice:
-            tests.append(NonOverlappingTemplateMatchingTest(
+            tests.append(NonOverlappingTemplateMatchingTest(file, fmt,
                 seq_len, seq_num, tpl_len=tpl_len_nonoverlapping, init=False))
         if STS.TestID.OVERLAPPING in choice:
-            tests.append(OverlappingTemplateMatchingTest(
+            tests.append(OverlappingTemplateMatchingTest(file, fmt,
                 seq_len, seq_num, tpl_len=tpl_len_overlapping, init=False))
         if STS.TestID.UNIVERSAL in choice:
-            tests.append(MaurersUniversalStatisticalTest(
+            tests.append(MaurersUniversalStatisticalTest(file, fmt,
                 seq_len, seq_num, init=False))
         if STS.TestID.COMPLEXITY in choice:
-            tests.append(LinearComplexityTest(
+            tests.append(LinearComplexityTest(file, fmt,
                 seq_len, seq_num, blk_len=blk_len_complexity, init=False))
         if STS.TestID.SERIAL in choice:
-            tests.append(SerialTest(
+            tests.append(SerialTest(file, fmt,
                 seq_len, seq_num, blk_len=blk_len_serial, init=False))
         if STS.TestID.ENTROPY in choice:
-            tests.append(ApproximateEntropyTest(
+            tests.append(ApproximateEntropyTest(file, fmt,
                 seq_len, seq_num, blk_len=blk_len_entropy, init=False))
         if STS.TestID.CUSUM in choice:
-            tests.append(CumulativeSumsTest(seq_len, seq_num, init=False))
+            tests.append(CumulativeSumsTest(
+                file, fmt,seq_len, seq_num, init=False))
         if STS.TestID.EXCURSIONS in choice:
-            tests.append(RandomExcursionsTest(seq_len, seq_num, init=False))
+            tests.append(RandomExcursionsTest(
+                file, fmt, seq_len, seq_num, init=False))
         if STS.TestID.EXCURSIONSVAR in choice:
             tests.append(RandomExcursionsVariantTest(
-                seq_len, seq_num, init=False))
+                file, fmt, seq_len, seq_num, init=False))
         
         if len(tests) < 1:
             msg = "No tests were selected."\

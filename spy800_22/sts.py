@@ -121,7 +121,7 @@ class STS:
     ALPHA = 0.01  # Significance level for p-value
     UNIF_LIM = 0.0001  # Significance level for uniformity (P-valueT)
 
-    def __init__(self, file: str, fmt: Enum, seq_len: int, seq_num: int) -> None:
+    def __init__(self, file: str, fmt: Enum, seq_len: int, seq_num: int):
         """Set the test parameters."""
         if seq_len < 1 or seq_num < 1:
             msg = "Length and number of sequence must be at least 1."
