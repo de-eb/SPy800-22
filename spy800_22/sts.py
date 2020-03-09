@@ -123,51 +123,26 @@ class STS:
 
     def __init__(self, file: str, fmt: Enum, seq_len: int, seq_num: int,
             proc_num: int =1, ig_err: bool =False) -> None:
-        """Set the test parameters.
-
-        Parameters
-        ----------
-        seq_len : `int`
-            Bit length of each split sequence.
-        seq_num : `int`
-            Number of sequences.
-            If `1` or more, the sequence is split and tested separately.
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
-        ig_err : `bool`, optional
-            If True, ignore any errors that occur during test execution.
-        
-        """
+        """Set the test parameters."""
         if seq_len < 1 or seq_num < 1 or proc_num < 1:
             msg = "Parameters must be at least 1."
             raise InvalidSettingError(msg)
+        self.__file = file
+        self.__fmt = fmt
         self.__sequence_len = int(seq_len)
         self.__sequence_num = int(seq_num)
-        self.__sequence = None
+        self.__seq_bytes = ceil(self.__sequence_len / 8)
+        self.__total_sequence_size = self.__sequence_num*self.__sequence_len
+        self.check_file()
         self.__process_num = proc_num
         if self.__process_num > mp.cpu_count():
             self.__process_num = mp.cpu_count()
         self.__ig_err = ig_err
         self.__tests = [self]
-        self.__file = file
         self.__start_time = None
         self.__end_time = None
-        self.__is_ready = False
-        self.__is_tested = False
-        self.__is_assessed = False
+        self.__is_finished = False
         self.__results = None
-        if fmt == STS.ReadAs.BIGENDIAN or fmt == STS.ReadAs.LITTLEENDIAN:
-            self.__seq_bytes = ceil(self.__sequence_len / 8)
-        self.__fmt = fmt
-        self.__total_sequence_size = self.__sequence_num*self.__sequence_len
-        np.set_printoptions(linewidth=100000)
-
-        self.__check_file()
-    
-    @property
-    def sequence(self):
-        """`ndarray uint`: Binary sequence."""
-        return self.__sequence
     
     @property
     def results(self) -> dict:
@@ -178,58 +153,8 @@ class STS:
     def param(self) -> None:
         """Return the local parameters for each test as a dictionary."""
         return None
-
-    def load_bits(self, file_path: str, fmt: Enum) -> None:
-        """Read data from a file and convert it to a binary sequence.
-
-        Parameters
-        ----------
-        file_path : `str`
-            The path of the file to read.
-        fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
-
-            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
-            BYTE         : 0x00,0x01 are converted to 0,1.
-            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
-            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
-
-        """
-        if not os.path.isfile(file_path):
-            msg = "File \"{}\" is not found.".format(file_path)
-            raise InvalidSettingError(msg)
-        print("Loading bits...", end="")
-        self.__sequence = np.zeros(
-            self.__sequence_len*self.__sequence_num, dtype='int8')
-
-        total_bits = os.path.getsize(file_path)
-        if fmt == STS.ReadAs.BIGENDIAN or fmt == STS.ReadAs.LITTLEENDIAN:
-            total_bits *= 8
-        if total_bits < self.__sequence.size:
-            msg = "Set value ({} x {}) exceeds the bits read ({}).".format(
-                self.__sequence_num, self.__sequence_len, total_bits)
-            raise BitShortageError(msg)
-
-        if fmt == STS.ReadAs.ASCII:
-            self.__read_bits_in_ascii_format(file_path)
-        elif fmt == STS.ReadAs.BYTE:
-            self.__read_bits_in_byte_format(file_path)
-        elif fmt == STS.ReadAs.BIGENDIAN:
-            self.__read_bits_in_binary_format(file_path)
-        elif fmt == STS.ReadAs.LITTLEENDIAN:
-            self.__read_bits_in_binary_format(file_path, reverse=True)
-        else:
-            msg = "File input mode must be Enum. -> instance.READ_AS.xxx"
-            raise InvalidSettingError(msg)
-
-        self.__file = file_path
-        self.__sequence = np.resize(
-            self.__sequence, (self.__sequence_num, self.__sequence_len))
-        self.__is_ready = True
-        print("\r{} bits loaded.".format(self.__sequence.size))
     
-    def __check_file(self):
+    def check_file(self) -> None:
         """Check whether a file is testable."""
         print("Checking file...", end="")
         if not os.path.isfile(self.__file):
@@ -238,7 +163,7 @@ class STS:
         self.__check_bits_num()
         if self.__fmt == STS.ReadAs.ASCII or self.__fmt == STS.ReadAs.BYTE:
             self.__check_format()
-        print("\rThe file is testable.")
+        print("\r{} is testable.".format(self.__file))
     
     def __check_bits_num(self) -> None:
         """Check the number of bits in the file."""
@@ -268,48 +193,6 @@ class STS:
                     "Detected: \"{}\", Position: {}".format(byte, n)
                 f.close()
                 raise IllegalBitError(msg)
-    
-    def __read_bits_in_ascii_format(self, file_path: str) -> None:
-        """Read data and convert it to a binary sequence."""
-        with open(file_path, mode='r') as f:
-            for n, byte in enumerate(iter(lambda:f.read(1), "")):
-                if n >= self.__sequence.size:
-                    return
-                if byte == "0" or byte == "1":
-                    self.__sequence[n] = byte
-                else:
-                    msg = "Data with a different format was detected.\n"\
-                        "Detected: \"{}\", Position: {}".format(byte, n)
-                    raise IllegalBitError(msg)
-
-    def __read_bits_in_byte_format(self, file_path: str) -> None:
-        """Read data and convert it to a binary sequence."""
-        with open(file_path, mode='rb') as f:
-            for n, byte in enumerate(iter(lambda:f.read(1), b'')):
-                if n >= self.__sequence.size:
-                    return
-                if byte == b'\x00' or byte == b'\x01':
-                    self.__sequence[n] = int.from_bytes(byte, 'big')
-                else:
-                    msg = "Data with a different format was detected.\n"\
-                        "Detected: \"{}\", Position: {}".format(byte, n)
-                    raise IllegalBitError(msg)
-    
-    def __read_bits_in_binary_format(
-            self, file_path: str, reverse: bool =False) -> None:
-        """Read data and convert it to a binary sequence."""
-        n = 0  # Bit counter
-        with open(file_path, mode='rb') as f:
-            for byte in iter(lambda:f.read(1), b''):
-                bits = int.from_bytes(byte, 'big')
-                for i in range(8):
-                    if n >= self.__sequence.size:
-                        return
-                    if reverse:  # Little-endian
-                        self.__sequence[n] = (bits >> i) & 1
-                    else:  # Big-endian
-                        self.__sequence[n] = (bits >> (7-i)) & 1
-                    n += 1
     
     def load_sequence(self, seq_id: int) -> np.ndarray:
         """Read data and convert it to a binary sequence."""
@@ -346,11 +229,8 @@ class STS:
     
     def run(self) -> None:
         """Run the test."""
-        # if not self.__is_ready:
-        #     print("No bits have been loaded. Unable to start test.")
-        #     return
         if self.__is_tested:
-            print("Test is over.")
+            print("Testing is already over.")
             return
 
         self.__start_time = datetime.now()
@@ -369,9 +249,10 @@ class STS:
                 print("\rTest in progress. |{:<50}|"
                     .format("█"*int(50*progress/max_progress)), end="")
         self.__sort_results(results)
+        self.__assess()
         print("\rTest completed.{}".format(" "*55))
         self.__end_time = datetime.now()
-        self.__is_tested = True
+        self.__is_finished = True
     
     def test_wrapper(self, args: list) -> list:
         """Wrapper function for parallel testing.
@@ -386,8 +267,7 @@ class STS:
         Returns
         -------
         result : `list`
-            Test result.
-            [testID, sequenceID, results, Error(when it occurs)]
+            [testID, sequenceID, Error(when it occurs), results]
         
         """
         test, seq_id = args
@@ -395,7 +275,6 @@ class STS:
         try:
             seq = self.load_sequence(seq_id)
             res = test.func(seq)
-            # res = test.func(self.__sequence[seq_id])
         except StatisticalError as err:
             result[2] = "StatisticalError"
             if not self.__ig_err:
@@ -431,19 +310,13 @@ class STS:
                 e = 0
             prev_id = r[0]
     
-    def assess(self) -> None:
+    def __assess(self) -> None:
         """Final assessment based on NIST guidelines.
 
         Calculate the pass rate and p-value uniformity for each test.
         The results are added to the `instance.results` dictionary.
 
         """
-        if not self.__is_tested:
-            print("Test not completed. Unable to start assessment.")
-            return
-        if self.__is_assessed:
-            print("Assessment is over.")
-            return
         key = self.__results.keys()
         for k in key:
             res0 = self.__calc_proportion(self.__results[k]['p-value'])
@@ -453,7 +326,6 @@ class STS:
             self.__results[k]['Passed'] = res0[2]
             self.__results[k]['Uniformity'] = res1[0]
             self.__results[k]['Histogram'] = res1[1]
-        self.__is_assessed = True
 
     def __calc_proportion(self, p):
         """Calcurate the proportion of passing sequences."""
@@ -490,7 +362,7 @@ class STS:
         unif = gammaincc(9/2, chi_square/2)
         return unif, hist
     
-    def report(self, file_path: str) -> None:
+    def report(self, file: str) -> None:
         """Generate and save CSV of test results.
 
         Note that if a file with the same path already exists,
@@ -502,11 +374,11 @@ class STS:
             Destination directory and file name.
         
         """
-        if not self.__is_assessed:
-            print("Assessment not completed. Unable to make report.")
+        if not self.__is_finished:
+            print("Test not completed. Unable to make report.")
             return
-
-        with open(file_path, mode='w') as f:
+        np.set_printoptions(linewidth=100000)
+        with open(file, mode='w') as f:
             csv = "SP800-22 Test Report\n\n"
             csv += ",Start,{}".format(
                 self.__start_time.strftime('%Y/%m/%d,%H:%M:%S'))
