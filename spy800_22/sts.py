@@ -121,11 +121,10 @@ class STS:
     ALPHA = 0.01  # Significance level for p-value
     UNIF_LIM = 0.0001  # Significance level for uniformity (P-valueT)
 
-    def __init__(self, file: str, fmt: Enum, seq_len: int, seq_num: int,
-            proc_num: int =1, ig_err: bool =False) -> None:
+    def __init__(self, file: str, fmt: Enum, seq_len: int, seq_num: int) -> None:
         """Set the test parameters."""
-        if seq_len < 1 or seq_num < 1 or proc_num < 1:
-            msg = "Parameters must be at least 1."
+        if seq_len < 1 or seq_num < 1:
+            msg = "Length and number of sequence must be at least 1."
             raise InvalidSettingError(msg)
         self.__file = file
         self.__fmt = fmt
@@ -134,15 +133,8 @@ class STS:
         self.__seq_bytes = ceil(self.__sequence_len / 8)
         self.__total_sequence_size = self.__sequence_num*self.__sequence_len
         self.check_file()
-        self.__process_num = proc_num
-        if self.__process_num > mp.cpu_count():
-            self.__process_num = mp.cpu_count()
-        self.__ig_err = ig_err
         self.__tests = [self]
-        self.__start_time = None
-        self.__end_time = None
         self.__is_finished = False
-        self.__results = None
     
     @property
     def results(self) -> dict:
@@ -151,7 +143,7 @@ class STS:
     
     @property
     def param(self) -> None:
-        """Return the local parameters for each test as a dictionary."""
+        """`dict`: Local parameters of test."""
         return None
     
     def check_file(self) -> None:
@@ -203,7 +195,7 @@ class STS:
             return self.__byte_to_8bits(seq_id)
 
     def __byte_to_1bit(self, seq_id: int) -> np.ndarray:
-        """Read data and convert it to a binary sequence."""
+        """Read in ASCII or BYTE format."""
         if self.__fmt == STS.ReadAs.ASCII:
             f = open(self.__file, mode='r')
         elif self.__fmt == STS.ReadAs.BYTE:
@@ -214,7 +206,7 @@ class STS:
         return np.array(list(seq), dtype='int8')
     
     def __byte_to_8bits(self, seq_id: int) -> np.ndarray:
-        """Read data and convert it to a binary sequence."""
+        """Read in BIGENDIAN or LITTLEENDIAN."""
         seek, head_ext = divmod(seq_id*self.__sequence_len, 8)
         tail_ext = 8*self.__seq_bytes - (head_ext + self.__sequence_len)
         with open(self.__file, mode='rb') as f:
@@ -227,11 +219,26 @@ class STS:
             seq = np.unpackbits(seq, bitorder='little')
         return seq[head_ext:-tail_ext].astype('int8')
     
-    def run(self) -> None:
-        """Run the test."""
-        if self.__is_tested:
+    def run(self, proc_num: int =1, ig_err: bool =False) -> None:
+        """Run the test.
+
+        Parameters
+        ----------
+        proc_num : `int`, optional
+            Number of processes for running tests in parallel.
+        
+        ig_err : `bool`, optional
+            If True, ignore any errors that occur during test execution.
+        
+        """
+        if self.__is_finished:
             print("Testing is already over.")
             return
+        if proc_num < 1:
+            proc_num = 1
+        if proc_num > mp.cpu_count():
+            proc_num = mp.cpu_count()
+        self.__ig_err = bool(ig_err)
 
         self.__start_time = datetime.now()
         print("Test in progress. ", end="")
@@ -242,7 +249,7 @@ class STS:
         results = []
         max_progress = len(args)
         progress = 0
-        with mp.Pool(processes=self.__process_num) as p:
+        with mp.Pool(processes=proc_num) as p:
             for result in p.imap_unordered(self.test_wrapper, args):
                 results.append(result)
                 progress += 1
@@ -267,7 +274,7 @@ class STS:
         Returns
         -------
         result : `list`
-            [testID, sequenceID, Error(when it occurs), results]
+            List of test results and tags to identify them.
         
         """
         test, seq_id = args
@@ -311,12 +318,7 @@ class STS:
             prev_id = r[0]
     
     def __assess(self) -> None:
-        """Final assessment based on NIST guidelines.
-
-        Calculate the pass rate and p-value uniformity for each test.
-        The results are added to the `instance.results` dictionary.
-
-        """
+        """Final assessment based on NIST guidelines."""
         key = self.__results.keys()
         for k in key:
             res0 = self.__calc_proportion(self.__results[k]['p-value'])
@@ -384,7 +386,7 @@ class STS:
                 self.__start_time.strftime('%Y/%m/%d,%H:%M:%S'))
             csv += "\n,End,{}\n".format(
                 self.__end_time.strftime('%Y/%m/%d,%H:%M:%S'))
-            csv += ",File,{}\n".format(self.__input_path)
+            csv += ",File,{}\n".format(self.__file)
             csv += ",Sequence length,{}\n".format(self.__sequence_len)
             csv += ",Number of sequence,{}\n".format(self.__sequence_num)
             csv += ",Significance level,{}\n".format(STS.ALPHA)
