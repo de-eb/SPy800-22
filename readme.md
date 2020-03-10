@@ -18,10 +18,11 @@ With this module you can:
 ```python
 from spy800_22.tests import Multiple
 
-test = Multiple(seq_len=1000000, seq_num=1000)
-test.load_bits("binarysequence.txt", fmt=test.ReadAs.ASCII)
-test.run()
-test.assess()
+test = Multiple(file = "binarysequence.txt", 
+                fmt = Multiple.ReadAs.ASCII,
+                seq_len=1000000,
+                seq_num=1000)
+test.run(proc_num=4, ig_err=True)
 test.report("testresults.csv")
 ```
 
