@@ -78,9 +78,10 @@ class FrequencyTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            FrequencyTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -95,6 +96,11 @@ class FrequencyTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
         
         """
         if init:
@@ -170,9 +176,10 @@ class BlockFrequencyTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            BlockFrequencyTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -190,12 +197,17 @@ class BlockFrequencyTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
 
         """
         if init:
             super().__init__(file, fmt, seq_len, seq_num)
         if seq_len < blk_len:
-            msg = "Block length must be smaller than sequence length."
+            msg = "'blk_len' must be smaller than 'seq_len'."
             raise InvalidSettingError(msg, self.ID)
         self.__blk_len = blk_len
         self.__blk_num = seq_len // blk_len
@@ -276,9 +288,10 @@ class RunsTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            RunsTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -293,6 +306,11 @@ class RunsTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
 
         """
         if init:
@@ -317,6 +335,11 @@ class RunsTest(STS):
                 'pi'     : float Estimator criteria.
                 'run'    : int Total of Runs.
             }
+        
+        Raise
+        -----
+        StatisticalError :
+            When significantly biased statistics are calculated.
         
         """
         pi = np.count_nonzero(bits) / bits.size
@@ -374,9 +397,10 @@ class LongestRunOfOnesTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            LongestRunOfOnesTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -391,12 +415,17 @@ class LongestRunOfOnesTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
 
         """
         if init:
             super().__init__(file, fmt, seq_len, seq_num)
         if seq_len < 128:
-            msg = "Sequence length must be at least 128 bits."
+            msg = "'seq_len' must be at least 128 bits."
             raise InvalidSettingError(msg, self.ID)
         if seq_len < 6272:
             self.__blk_len = 8
@@ -503,9 +532,10 @@ class BinaryMatrixRankTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            BinaryMatrixRankTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -520,6 +550,11 @@ class BinaryMatrixRankTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
 
         """
         if init:
@@ -527,7 +562,7 @@ class BinaryMatrixRankTest(STS):
         self.__m, self.__q = 32, 32
         self.__mat_num = seq_len // (self.__m * self.__q)
         if self.__mat_num == 0:
-            msg = "Sequence length must be at least {} bits.".format(
+            msg = "'seq_len' must be at least {} bits.".format(
                 self.__m * self.__q)
             raise InvalidSettingError(msg, self.ID)
         self.__prob = np.zeros(3)
@@ -643,9 +678,10 @@ class DiscreteFourierTransformTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            DiscreteFourierTransformTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -660,6 +696,11 @@ class DiscreteFourierTransformTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
 
         """
         if init:
@@ -746,9 +787,10 @@ class NonOverlappingTemplateMatchingTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            NonOverlappingTemplateMatchingTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -766,13 +808,18 @@ class NonOverlappingTemplateMatchingTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
 
         """
         if init:
             super().__init__(file, fmt, seq_len, seq_num)
         tpl_path = "spy800_22/_templates/tpl{}.npy".format(tpl_len)
         if tpl_len < 2 or tpl_len > 16:
-            msg = "Template length must be between 2 and 16."
+            msg = "'tpl_len' must be between 2 and 16."
             raise InvalidSettingError(msg, self.ID)
         elif not os.path.isfile(tpl_path):
             msg = "Template file {} is not found.".format(tpl_len)
@@ -780,8 +827,8 @@ class NonOverlappingTemplateMatchingTest(STS):
         self.__blk_num = 8
         self.__blk_len = seq_len // self.__blk_num
         if self.__blk_len <= tpl_len + 1:
-            msg = "Sequence length must be at least "\
-                "(Template_length + 2) x 8 bits."
+            msg = "'seq_len' must be at least "\
+                "('tpl_len' + 2) x 8 bits."
             raise InvalidSettingError(msg, self.ID)
         self.__mean = (self.__blk_len - tpl_len + 1) / 2**tpl_len
         self.__var = self.__blk_len*(1/2**tpl_len-(2*tpl_len-1)/2**(2*tpl_len))
@@ -883,9 +930,10 @@ class OverlappingTemplateMatchingTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            OverlappingTemplateMatchingTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -903,22 +951,27 @@ class OverlappingTemplateMatchingTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
 
         """
         if init:
             super().__init__(file, fmt, seq_len, seq_num)
         if tpl_len < 2:
-            msg = "Template length must be at least 2 bits."
+            msg = "'tpl_len' must be at least 2 bits."
             raise InvalidSettingError(msg, self.ID)
         self.__k = 5
         self.__blk_len = 1032
         self.__blk_num = seq_len // self.__blk_len
         if self.__blk_num < 1:
-            msg = "Sequence length must be at least {} bits.".format(
+            msg = "'seq_len' must be at least {} bits.".format(
                 self.__blk_len)
             raise InvalidSettingError(msg, self.ID)
         if tpl_len >= self.__blk_len - 1:
-            msg = "Template length must be {} bits or less.".format(
+            msg = "'tpl_len' must be {} bits or less.".format(
                 self.__blk_len - 1)
             raise InvalidSettingError(msg, self.ID)
         self.__eta = ((self.__blk_len - tpl_len + 1) / 2**tpl_len) / 2
@@ -1022,9 +1075,10 @@ class MaurersUniversalStatisticalTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            MaurersUniversalStatisticalTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -1039,6 +1093,11 @@ class MaurersUniversalStatisticalTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
 
         """
         if init:
@@ -1050,7 +1109,7 @@ class MaurersUniversalStatisticalTest(STS):
             if seq_len >= i:
                 self.__blk_len += 1
         if self.__blk_len < 6:
-            msg = "Sequence length must be at least {} bits.".format(th[0])
+            msg = "'seq_len' must be at least {} bits.".format(th[0])
             raise InvalidSettingError(msg, self.ID)
         var = [0, 0, 0, 0, 0, 0, 2.954, 3.125, 3.238, 3.311,
                3.356, 3.384, 3.401, 3.410, 3.416, 3.419, 3.421]
@@ -1089,6 +1148,11 @@ class MaurersUniversalStatisticalTest(STS):
                 'p-value': float Test result.
                 'chi^2'  : float Computed statistic.
             }
+        
+        Raise
+        -----
+        ComputationalError :
+            When an incorrect calculation is detected.
         
         """
         t = np.zeros(2**self.__blk_len)
@@ -1160,9 +1224,10 @@ class LinearComplexityTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            LinearComplexityTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -1180,12 +1245,17 @@ class LinearComplexityTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
 
         """
         if init:
             super().__init__(file, fmt, seq_len, seq_num)
         if seq_len < blk_len:
-            msg = "Block length must be smaller than sequence length."
+            msg = "'blk_len' must be smaller than 'seq_len'."
             raise InvalidSettingError(msg, self.ID)
         self.__blk_len = blk_len
         self.__blk_num = seq_len // blk_len
@@ -1296,9 +1366,10 @@ class SerialTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            SerialTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -1316,12 +1387,17 @@ class SerialTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
 
         """
         if init:
             super().__init__(file, fmt, seq_len, seq_num)
         if seq_len < blk_len:
-            msg = "Block length must be smaller than sequence length."
+            msg = "'blk_len' must be smaller than 'seq_len'."
             raise InvalidSettingError(msg, self.ID)
         self.__blk_len = blk_len
     
@@ -1417,9 +1493,10 @@ class ApproximateEntropyTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            ApproximateEntropyTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -1437,13 +1514,18 @@ class ApproximateEntropyTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
 
         """
         if init:
             super().__init__(file, fmt, seq_len, seq_num)
         ref = 2**(blk_len+5)
         if seq_len < ref:
-            msg = "Sequence length must be at least 2^(Block_length + 5) bits."
+            msg = "'seq_len' must be at least 2^('blk_len' + 5) bits."
             raise InvalidSettingError(msg, self.ID)
         self.__blk_len = blk_len
     
@@ -1537,9 +1619,10 @@ class CumulativeSumsTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            CumulativeSumsTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -1554,6 +1637,11 @@ class CumulativeSumsTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
         
         """
         if init:
@@ -1647,9 +1735,10 @@ class RandomExcursionsTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            RandomExcursionsTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -1664,6 +1753,11 @@ class RandomExcursionsTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
         
         """
         if init:
@@ -1706,6 +1800,11 @@ class RandomExcursionsTest(STS):
                 'chi^2'  : ndarray Computed statistic for each state.
                 'cycle'  : Number of cycles.
             }
+        
+        Raise
+        -----
+        StatisticalError :
+            When significantly biased statistics are calculated.
         
         """
         bits = 2*bits - 1
@@ -1781,9 +1880,10 @@ class RandomExcursionsVariantTest(STS):
             The path of the file to read.
         
         fmt : `Enum`
-            A method of converting data into bits.
-            Specify the built-in `Enum`. -> `instance.ReadAs.xxx`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
 
+            RandomExcursionsVariantTest.ReadAs.xxx
             ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
             BYTE         : 0x00,0x01 are converted to 0,1.
             BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
@@ -1798,6 +1898,11 @@ class RandomExcursionsVariantTest(STS):
         
         init : `bool`, optional
             If `True`, initialize the super class.
+        
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
         
         """
         if init:
@@ -1830,6 +1935,11 @@ class RandomExcursionsVariantTest(STS):
                 'p-value': ndarray Test result for each state.
                 'xi'     : Number of occurrences of each state.
             }
+        
+        Raise
+        -----
+        StatisticalError :
+            When significantly biased statistics are calculated.
         
         """
         bits = 2*bits - 1
@@ -1895,20 +2005,31 @@ class Multiple(STS):
 
         Parameters
         ----------
+        file : `str`
+            The path of the file to read.
+        
+        fmt : `Enum`
+            A method of converting each byte read from a file into bits.
+            Specify the built-in `Enum` as follows.
+
+            Multiple.ReadAs.xxx
+            ASCII        : 0x30,0x31 ("0","1") are converted to 0,1.
+            BYTE         : 0x00,0x01 are converted to 0,1.
+            BIGENDIAN    : 0x00-0xFF are converted to 8 bits in big endian.
+            LITTLEENDIAN : 0x00-0xFF are converted to 8 bits in little endian.
+        
         seq_len : `int`
             Bit length of each sequence.
 
         seq_num : `int`
             Number of sequences.
             If `1` or more, the sequence is split and tested separately.
-        
-        proc_num : `int`, optional
-            Number of processes for running tests in parallel.
 
         choice : `list of Enum`, optional
             IDs of the tests to run. If None, run all tests.
-            Specify the built-in Enum. -> Multiple.TestID.xxx
+            Specify the built-in `Enum` as follows.
             
+            Multiple.TestID.xxx
             FREQUENCY      : "Frequency (Monobit) Test"
             BLOCKFREQUENCY : "Frequency Test within a Block"
             RUNS           : "Runs Test"
@@ -1943,10 +2064,15 @@ class Multiple(STS):
         blk_len_entropy : `int`, optional
             Block length in "Approximate entropy Test".
         
+        Raise
+        -----
+        InvalidSettingError :
+            When an invalid test parameter is set.
+        
         """
         super().__init__(file, fmt, seq_len, seq_num)
         if choice is not None and not isinstance(choice, list):
-            msg = "Test choice must be a list of Enums (Multiple.TestID.xxx)"\
+            msg = "'choice' must be a list of Enums (Multiple.TestID.xxx)"\
                   " or None."
             raise InvalidSettingError(msg)
         elif choice is None:
@@ -1954,27 +2080,32 @@ class Multiple(STS):
 
         tests = []
         if STS.TestID.FREQUENCY in choice:
-            tests.append(FrequencyTest(file, fmt, seq_len, seq_num, init=False))
+            tests.append(
+                FrequencyTest(file, fmt, seq_len, seq_num, init=False))
         if STS.TestID.BLOCKFREQUENCY in choice:
-            tests.append(BlockFrequencyTest(file, fmt,
-                seq_len, seq_num, blk_len=blk_len_blockfrequency, init=False))
+            tests.append(
+                BlockFrequencyTest(file, fmt, seq_len, seq_num,
+                    blk_len=blk_len_blockfrequency, init=False))
         if STS.TestID.RUNS in choice:
             tests.append(RunsTest(file, fmt, seq_len, seq_num, init=False))
         if STS.TestID.LONGESTRUN in choice:
-            tests.append(LongestRunOfOnesTest(
-                file, fmt, seq_len, seq_num, init=False))
+            tests.append(
+                LongestRunOfOnesTest(file, fmt, seq_len, seq_num, init=False))
         if STS.TestID.RANK in choice:
-            tests.append(BinaryMatrixRankTest(
-                file, fmt, seq_len, seq_num, init=False))
+            tests.append(
+                BinaryMatrixRankTest(file, fmt, seq_len, seq_num, init=False))
         if STS.TestID.DFT in choice:
-            tests.append(DiscreteFourierTransformTest(file, fmt,
-                seq_len, seq_num, init=False))
+            tests.append(
+                DiscreteFourierTransformTest(
+                    file, fmt, seq_len, seq_num, init=False))
         if STS.TestID.NONOVERLAPPING in choice:
-            tests.append(NonOverlappingTemplateMatchingTest(file, fmt,
-                seq_len, seq_num, tpl_len=tpl_len_nonoverlapping, init=False))
+            tests.append(
+                NonOverlappingTemplateMatchingTest(file, fmt, seq_len, seq_num,
+                    tpl_len=tpl_len_nonoverlapping, init=False))
         if STS.TestID.OVERLAPPING in choice:
-            tests.append(OverlappingTemplateMatchingTest(file, fmt,
-                seq_len, seq_num, tpl_len=tpl_len_overlapping, init=False))
+            tests.append(
+                OverlappingTemplateMatchingTest(file, fmt, seq_len, seq_num,
+                    tpl_len=tpl_len_overlapping, init=False))
         if STS.TestID.UNIVERSAL in choice:
             tests.append(MaurersUniversalStatisticalTest(file, fmt,
                 seq_len, seq_num, init=False))
@@ -1982,24 +2113,27 @@ class Multiple(STS):
             tests.append(LinearComplexityTest(file, fmt,
                 seq_len, seq_num, blk_len=blk_len_complexity, init=False))
         if STS.TestID.SERIAL in choice:
-            tests.append(SerialTest(file, fmt,
-                seq_len, seq_num, blk_len=blk_len_serial, init=False))
+            tests.append(
+                SerialTest(file, fmt, seq_len, seq_num,
+                    blk_len=blk_len_serial, init=False))
         if STS.TestID.ENTROPY in choice:
-            tests.append(ApproximateEntropyTest(file, fmt,
-                seq_len, seq_num, blk_len=blk_len_entropy, init=False))
+            tests.append(
+                ApproximateEntropyTest(file, fmt, seq_len, seq_num,
+                    blk_len=blk_len_entropy, init=False))
         if STS.TestID.CUSUM in choice:
-            tests.append(CumulativeSumsTest(
-                file, fmt,seq_len, seq_num, init=False))
+            tests.append(
+                CumulativeSumsTest(file, fmt,seq_len, seq_num, init=False))
         if STS.TestID.EXCURSIONS in choice:
-            tests.append(RandomExcursionsTest(
-                file, fmt, seq_len, seq_num, init=False))
+            tests.append(
+                RandomExcursionsTest(file, fmt, seq_len, seq_num, init=False))
         if STS.TestID.EXCURSIONSVAR in choice:
-            tests.append(RandomExcursionsVariantTest(
-                file, fmt, seq_len, seq_num, init=False))
+            tests.append(
+                RandomExcursionsVariantTest(
+                    file, fmt, seq_len, seq_num, init=False))
         
         if len(tests) < 1:
             msg = "No tests were selected."\
-                  " Test choice must be a list of Enums (Multiple.TestID.xxx)"\
+                  " 'choice' must be a list of Enums (Multiple.TestID.xxx)"\
                   " or None."
             raise InvalidSettingError(msg)
 

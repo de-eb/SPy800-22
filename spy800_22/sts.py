@@ -45,8 +45,8 @@ class STS:
     """spy800-22 base class
 
     This is a class inherited by all classes in the spy800-22 package.
-    Implement the functions commonly used by each class (Bits input, parallel
-    testing, summary and output of test results, etc.).
+    Implement the functions (Bits input, parallel testing, summary and
+    output of test results, etc.) commonly used by each class.
 
     Attributes
     ----------
@@ -112,7 +112,7 @@ class STS:
             
 
     class ReadAs(Enum):
-        """Bits read mode specifier."""
+        """File read mode specifier."""
         ASCII = auto()
         BYTE = auto()
         BIGENDIAN = auto()
@@ -123,11 +123,18 @@ class STS:
 
     def __init__(self, file: str, fmt: Enum, seq_len: int, seq_num: int):
         """Set the test parameters."""
-        if seq_len < 1 or seq_num < 1:
-            msg = "Length and number of sequence must be at least 1."
+        if not os.path.isfile(file):
+            msg = "File \"{}\" is not found.".format(file)
             raise InvalidSettingError(msg)
         self.__file = file
+        if not isinstance(fmt, STS.ReadAs):
+            msg = "'fmt' must be specified with a built-in Enum"\
+                " ({}.ReadAS.xxx)".format(self.__class__.__name__)
+            raise InvalidSettingError(msg)
         self.__fmt = fmt
+        if seq_len < 1 or seq_num < 1:
+            msg = "'seq_len' and 'seq_num' must be at least 1."
+            raise InvalidSettingError(msg)
         self.__sequence_len = int(seq_len)
         self.__sequence_num = int(seq_num)
         self.__seq_bytes = ceil(self.__sequence_len / 8)
@@ -147,11 +154,17 @@ class STS:
         return None
     
     def check_file(self) -> None:
-        """Check whether a file is testable."""
+        """Check whether a file is testable.
+
+        Raise
+        -----
+        BitShortageError :
+            When bits in the file are less than user setting.
+        
+        IllegalBitError : 
+            When data different from user setting format is detected.
+        """
         print("Checking file...", end="")
-        if not os.path.isfile(self.__file):
-            msg = "File \"{}\" is not found.".format(self.__file)
-            raise InvalidSettingError(msg)
         self.__check_bits_num()
         if self.__fmt == STS.ReadAs.ASCII or self.__fmt == STS.ReadAs.BYTE:
             self.__check_format()
@@ -486,7 +499,7 @@ class BitShortageError(STSError):
     """Raised when bits in the file are less than user setting."""
 
 class IllegalBitError(STSError):
-    """Raised when data different from user setting format is read."""
+    """Raised when data different from user setting format is detected."""
 
 class StatisticalError(STSError):
     """Raised when significantly biased statistics are calculated."""
