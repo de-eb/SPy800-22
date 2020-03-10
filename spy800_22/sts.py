@@ -286,8 +286,12 @@ class STS:
             result[2] = "StatisticalError"
             if not self.__ig_err:
                 raise
+        except ComputationalError as err:
+            result[2] = "ComputationalError"
+            if not self.__ig_err:
+                raise
         except ZeroDivisionError as err:
-            result[2] = "ZeroDivisionError"
+            result[2] = "ComputationalError"
             if not self.__ig_err:
                 msg = "Division by zero detected."
                 raise ComputationalError(msg, test.ID)

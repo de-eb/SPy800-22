@@ -14,7 +14,7 @@
 
 This module is part of the spy800_22 package and consists of 15 + 1 classes.
 Each of the 15 classes corresponds to 15 tests of NIST SP800-22.
-The last one is a wrapper class to execute these continuously.
+The last one is a wrapper class to execute them continuously.
 These classes provide various functions (data I/O, parallel testing, etc.)
 to execute each test.
 
@@ -42,7 +42,8 @@ from scipy.fftpack import fft
 from scipy.special import erfc, gammaincc, loggamma
 from scipy.stats import norm
 
-from spy800_22.sts import STS, InvalidSettingError, StatisticalError
+from spy800_22.sts import STS, InvalidSettingError
+from spy800_22.sts import StatisticalError, ComputationalError
 
 
 class FrequencyTest(STS):
@@ -916,6 +917,10 @@ class OverlappingTemplateMatchingTest(STS):
             msg = "Sequence length must be at least {} bits.".format(
                 self.__blk_len)
             raise InvalidSettingError(msg, self.ID)
+        if tpl_len >= self.__blk_len - 1:
+            msg = "Template length must be {} bits or less.".format(
+                self.__blk_len - 1)
+            raise InvalidSettingError(msg, self.ID)
         self.__eta = ((self.__blk_len - tpl_len + 1) / 2**tpl_len) / 2
         self.__pi = np.zeros(self.__k+1)
         self.__pi[0] = exp(-self.__eta)
@@ -1093,8 +1098,11 @@ class MaurersUniversalStatisticalTest(STS):
         t[uniq] = idx
         s = 0
         for i in range(t.size):
-            s += np.sum(np.log2(np.diff(
-                np.append(-t[i], np.where(bits[self.__q:]==i)))))
+            log_args = np.diff(np.append(-t[i], np.where(bits[self.__q:]==i)))
+            if np.any(log_args == 0):
+                msg = "Zero was found in the logarithmic argument."
+                raise ComputationalError(msg, self.ID)
+            s += np.sum(np.log2(log_args))
         phi = s / self.__k
         p_value = erfc(abs(phi-self.__exp_val) / (sqrt(2)*self.__sigma))
         return {'p-value': p_value, 'phi': phi}
