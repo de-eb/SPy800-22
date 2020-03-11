@@ -363,16 +363,16 @@ class STS:
         prop = passed / n
         return prop, prop_lim, passed, p_values
     
-    def __calc_uniformity(self, p_vals):
+    def __calc_uniformity(self, p):
         """Calcurate the uniformity of p_values."""
-        hist = np.zeros((p_vals.shape[1],10), dtype=int)
-        if p_vals.shape[0] == 0:
+        hist = np.zeros((p.shape[1],10), dtype=int)
+        if p.shape[0] == 0:
             return 0.0, hist
-        for i in range(p_vals.shape[1]):
-            hist[i] = np.histogram(p_vals[:,i], range=(0,1))[0]
-            hist[-1] += np.count_nonzero(p_vals[:,i] > 1)
+        for i in range(p.shape[1]):
+            hist[i] = np.histogram(p[:,i], range=(0,1))[0]
+            hist[-1] += np.count_nonzero(p[:,i] > 1)
         chi_square = np.sum(
-            (hist - p_vals.shape[0]/10)**2 / (p_vals.shape[0]/10), axis=1)
+            (hist - p.shape[0]/10)**2 / (p.shape[0]/10), axis=1)
         unif = gammaincc(9/2, chi_square/2)
         return unif, hist
     
