@@ -1810,12 +1810,12 @@ class RandomExcursionsTest(STS):
         freq = np.zeros((6, self.__stat.size), dtype=int)
         for i in range(cycle):
             hist[i] = np.histogram(
-                s[idx[i]:idx[i+1]], bins=9, range=(-4,5))[0][self.__stat+4]
+                s[idx[i]+1:idx[i+1]], bins=[-4, -3, -2, -1, 1, 2, 3, 4, 4.1])[0]
         for i in range(6):
             freq[i] = np.count_nonzero(hist==i, axis=0)
-        freq[i] = np.count_nonzero(hist>i, axis=0)
+        freq[i] += np.count_nonzero(hist>i, axis=0)
         chi_square = np.sum((freq-cycle*self.__pi)**2/(cycle*self.__pi),axis=0)
-        p_value = gammaincc(2.5 , chi_square/2.0)
+        p_value = gammaincc(2.5, chi_square/2)
         return {'p-value': p_value, 'chi^2': chi_square, 'cycles': cycle}
     
     def to_csv(self, res: dict) -> str:
