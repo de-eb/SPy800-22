@@ -139,7 +139,7 @@ class STS:
         self.__sequence_num = int(seq_num)
         self.__seq_bytes = ceil(self.__sequence_len / 8)
         self.__total_sequence_size = self.__sequence_num*self.__sequence_len
-        self.check_file()
+        # self.check_file()
         self.__tests = [self]
         self.__is_finished = False
     
@@ -297,10 +297,6 @@ class STS:
             res = test.func(seq)
         except StatisticalError as err:
             result[2] = "StatisticalError"
-            if not self.__ig_err:
-                raise
-        except ComputationalError as err:
-            result[2] = "ComputationalError"
             if not self.__ig_err:
                 raise
         except ZeroDivisionError as err:

@@ -42,8 +42,7 @@ from scipy.fftpack import fft
 from scipy.special import erfc, gammaincc, loggamma
 from scipy.stats import norm
 
-from spy800_22.sts import STS, InvalidSettingError
-from spy800_22.sts import StatisticalError, ComputationalError
+from spy800_22.sts import STS, InvalidSettingError, StatisticalError
 
 
 class FrequencyTest(STS):
@@ -1123,6 +1122,7 @@ class MaurersUniversalStatisticalTest(STS):
         self.__sigma = (
             (0.7 - 0.8/self.__blk_len + (4+32/self.__blk_len)/15
             * self.__k**(-3/self.__blk_len)) * sqrt(self.__var/self.__k))
+        self.__init_idx = np.arange(self.__q-1, -1, -1)
     
     @property
     def param(self) -> dict:
@@ -1149,24 +1149,16 @@ class MaurersUniversalStatisticalTest(STS):
                 'chi^2'  : float Computed statistic.
             }
         
-        Raise
-        -----
-        ComputationalError :
-            When an incorrect calculation is detected.
-        
         """
-        t = np.zeros(2**self.__blk_len)
+        t = np.zeros(2**self.__blk_len, dtype=int)
         bits = self.__packbits(
             np.resize(bits, (self.__k+self.__q, self.__blk_len)))
         uniq, idx = np.unique(bits[:self.__q][::-1], return_index=True)
-        t[uniq] = idx
+        t[uniq] = self.__init_idx[idx]
         s = 0
         for i in range(t.size):
-            log_args = np.diff(np.append(-t[i], np.where(bits[self.__q:]==i)))
-            if np.any(log_args == 0):
-                msg = "Zero was found in the logarithmic argument."
-                raise ComputationalError(msg, self.ID)
-            s += np.sum(np.log2(log_args))
+            s += np.sum(np.log2(np.diff(np.append(
+                t[i], np.where(bits[self.__q:]==i)[0]+self.__q))))
         phi = s / self.__k
         p_value = erfc(abs(phi-self.__exp_val) / (sqrt(2)*self.__sigma))
         return {'p-value': p_value, 'phi': phi}
