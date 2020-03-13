@@ -1298,7 +1298,7 @@ class LinearComplexityTest(STS):
         """Berlekamp Massey Algorithm."""
         c, b = np.zeros(bits.size, dtype=int), np.zeros(bits.size, dtype=int)
         c[0], b[0] = 1, 1
-        l, m, i = 0, -1, 0
+        l, m = 0, -1
         for i in range(bits.size):
             if (bits[i] + np.dot(bits[i-l:i][::-1], c[1:1+l])) % 2 == 1:
                 t = c.copy()
@@ -1306,8 +1306,7 @@ class LinearComplexityTest(STS):
                 c = c % 2
                 if l <= i>>1:
                     l = i + 1 - l
-                    m = i
-                    b = t
+                    m, b = i, t
         return l
     
     def to_csv(self, res: dict) -> str:
