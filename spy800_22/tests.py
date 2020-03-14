@@ -345,7 +345,7 @@ class RunsTest(STS):
         if abs(pi-0.5) > 2/sqrt(bits.size):
             msg = "Estimator criteria not met. (Pi = {})".format(pi)
             raise StatisticalError(msg, self.ID)
-        run = np.count_nonzero(np.diff(np.pad(bits, (1,1))))
+        run = np.count_nonzero(np.diff(bits)) + 1
         p_value = erfc(
             abs(run-2*bits.size*pi*(1-pi)) / (2*pi*(1-pi)*sqrt(2*bits.size)))
         return {'p-value': p_value, 'pi': pi, 'run': run}
