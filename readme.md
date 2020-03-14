@@ -10,7 +10,7 @@ With this module you can:
 
 ## VS. sts-2.1.2
 **Comparison of features.**
-_| SPy800-22 | sts-2.1.2
+Features| SPy800-22 | sts-2.1.2
 :-:|:-:|:-:
 Compile | Unnecessary | Necessary
 Interface | Python script | Command line
